@@ -1,0 +1,6 @@
+LangChain provides application building blocks for retrieval, prompting, chains, tools, and model integration.
+It can be used to orchestrate document loading, chunking, embedding, retrieval, and response synthesis in a modular RAG pipeline.
+FastAPI pairs well with LangChain because the backend can expose ingestion and query endpoints while keeping model adapters configurable.
+Production systems should separate retrieval evaluation from answer evaluation so failures can be diagnosed precisely.
+Observability is important in document intelligence systems because developers need to inspect queries, retrieved chunks, citations, and verification scores.
+

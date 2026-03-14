@@ -1,0 +1,86 @@
+Reliable RAG Document Intelligence Platform
+Final Year Project Implementation Plan
+
+Student: Lakshit Tandon
+Technology Stack: FastAPI, React, LangChain, Qdrant, Whoosh, PostgreSQL, Docker
+
+Goal
+Build a reliable document question-answering platform that retrieves evidence from a trusted corpus, generates citation-grounded answers, verifies support at sentence level, and provides measurable evaluation outputs for academic demonstration and report writing.
+
+1. Problem Statement
+Large language models can produce fluent answers but may hallucinate when the required information is not present in the prompt context. This project addresses that problem by building a reliable Retrieval-Augmented Generation platform that ingests a document corpus, performs hybrid retrieval, reranks evidence, produces citation-aware answers, verifies support, and exposes the full workflow through both API and user interface layers.
+
+2. Objectives
+- Create a reproducible ingestion pipeline for PDF and text documents.
+- Implement dense retrieval, BM25 retrieval, Reciprocal Rank Fusion, and reranking.
+- Generate grounded answers with explicit citations and refusal behavior for unsupported questions.
+- Add sentence-level verification to reduce hallucination risk.
+- Build an evaluation harness with retrieval and answer quality metrics.
+- Deliver a working React demo, FastAPI backend, Docker deployment, and final report artifacts.
+
+3. System Architecture
+- Frontend: Login, corpus dashboard, upload status, query chat, citation viewer, evaluation dashboard, logs view.
+- API Layer: Auth, document management, query submission, evaluation runs, log access, health checks.
+- RAG Services: Parsing, chunking, dense retrieval, BM25 retrieval, RRF, reranking, grounded generation, verification.
+- Data and Indexing: Document metadata, audit trails, vector index, keyword index, benchmark results.
+- Deployment: Reproducible local environment, seeded demo corpus, multi-service orchestration.
+
+4. Module Breakdown
+4.1 Ingestion and Parsing
+Support upload and parsing of PDF and TXT files, extract text page-wise where possible, flatten basic tables to text, attach metadata such as filename, checksum, page, section, and chunk identifiers, and reject scanned PDFs in v1 when no extractable text is found.
+
+4.2 Retrieval Pipeline
+Chunk documents into overlapping windows of 500-800 tokens with 100-150 token overlap, run dense retrieval and BM25 retrieval in parallel, merge ranked outputs with Reciprocal Rank Fusion, rerank the top candidate set, and pass the strongest evidence set to the generator.
+
+4.3 Grounded Generation
+Enforce answer generation only from retrieved context, return explicit citations at document and page or section level, and use the exact refusal text "Not found in the provided documents." whenever evidence quality is insufficient.
+
+4.4 Verification and Evaluation
+Verify answer sentences against the evidence set, compute support scores, flag unsupported claims, and run benchmark experiments reporting Recall@k, MRR, nDCG, citation correctness, refusal accuracy, and hallucination rate.
+
+4.5 UI and Demo Layer
+Deliver a complete demo application with login, corpus view, upload and reindex flows, question answering interface, source inspection, evaluation dashboard, and audit-log views suitable for viva and project review demonstrations.
+
+5. Public API Plan
+- POST /auth/login: Authenticate demo users and issue signed access tokens.
+- POST /documents/upload: Upload and ingest a new document into the corpus.
+- GET /documents: List ingested documents and current indexing state.
+- POST /documents/{id}/reindex: Rebuild chunking and retrieval index for an existing document.
+- POST /query: Run retrieval, reranking, generation, verification, and trace output.
+- POST /evaluations/run: Execute the benchmark suite and persist an evaluation run.
+- GET /evaluations: List benchmark run results.
+- GET /logs: Expose audit and debugging logs for admin review.
+- GET /health: Operational readiness check.
+
+6. Dataset Strategy
+Use a public and reproducible corpus for development and evaluation so the project remains demonstrable without NDA restrictions. The seeded demo corpus includes policy-style, technical, and evaluation-oriented text documents. Additional public PDFs can be added later for stronger results and screenshots.
+
+7. Evaluation Strategy
+- Retrieval: Recall@k, MRR, nDCG.
+- Answer quality: keyword correctness, citation correctness, refusal behavior.
+- Safety: hallucination rate and unsupported-sentence ratio.
+- Comparisons: dense-only, BM25-only, hybrid, hybrid + rerank, hybrid + rerank + verification.
+
+8. Risks and Mitigations
+- Weak retrieval quality on mixed queries: use hybrid retrieval, metadata, chunk tuning, and reranking.
+- Hallucinations despite retrieval: use strict prompting, refusal threshold, and sentence verification.
+- Scanned PDFs without extractable text: reject in v1 and document OCR as future work.
+- Solo-project delivery pressure: finish a usable MVP first, then improve polish and metrics.
+
+9. Timeline
+- March 14-16, 2026: Project-plan document, architecture lock, API list, acceptance criteria.
+- March 17-23, 2026: FastAPI and React scaffolds, auth flow, document and query models.
+- March 24-30, 2026: Ingestion, chunking, dense retrieval, BM25, corpus dashboard.
+- March 31-April 6, 2026: Hybrid fusion, reranking, grounded prompting, citations, refusal logic.
+- April 7-13, 2026: Verification, benchmark harness, metrics dashboard.
+- April 14-20, 2026: Audit logs, role checks, source viewer, UI polish.
+- April 21-30, 2026: Dockerization, ablations, plots, demo script, MVP freeze.
+- May 1-15, 2026: Final report material, screenshots, results discussion, viva preparation.
+
+10. Final Deliverables
+- Working FastAPI backend and React frontend.
+- Seeded public corpus and benchmark dataset.
+- Docker Compose deployment files.
+- Evaluation outputs and charts for the final report.
+- Project plan document and final report content support.
+

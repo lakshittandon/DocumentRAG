@@ -1,0 +1,7 @@
+Reliable retrieval-augmented generation combines information retrieval with constrained answer generation.
+In a grounded RAG system, the model answers questions only from retrieved evidence rather than relying on unsupported memory.
+Hybrid retrieval often combines dense vector retrieval with BM25 keyword retrieval to improve recall across semantic and lexical matches.
+Reciprocal Rank Fusion is a simple but effective way to merge ranked lists from multiple retrievers.
+Reranking improves precision by rescoring a small candidate set before generation.
+Citation-aware answers improve trust because users can inspect the source passage, page, or section that supports the response.
+

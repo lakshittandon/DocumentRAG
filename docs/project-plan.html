@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Reliable RAG Project Plan</title>
+    <style>
+      body {
+        font-family: Helvetica, Arial, sans-serif;
+        margin: 36px;
+        color: #1a1a1a;
+        line-height: 1.45;
+      }
+      h1, h2, h3 {
+        color: #0b3d5c;
+      }
+      h1 {
+        font-size: 26px;
+        margin-bottom: 8px;
+      }
+      h2 {
+        font-size: 18px;
+        margin-top: 28px;
+        margin-bottom: 8px;
+        border-bottom: 1px solid #d0d7de;
+        padding-bottom: 4px;
+      }
+      h3 {
+        font-size: 15px;
+        margin-top: 20px;
+        margin-bottom: 6px;
+      }
+      p, li {
+        font-size: 12px;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 10px;
+      }
+      th, td {
+        border: 1px solid #c7d1d8;
+        padding: 8px;
+        vertical-align: top;
+        font-size: 11px;
+      }
+      th {
+        background: #edf4f8;
+        text-align: left;
+      }
+      .meta {
+        color: #425466;
+        font-size: 12px;
+      }
+      .highlight {
+        background: #f2f8fb;
+        border-left: 4px solid #0b7285;
+        padding: 10px 14px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Reliable RAG Document Intelligence Platform</h1>
+    <p class="meta">
+      Final Year Project Implementation Plan<br />
+      Student: Lakshit Tandon<br />
+      Technology Stack: FastAPI, React, LangChain, Qdrant, Whoosh, PostgreSQL, Docker
+    </p>
+
+    <div class="highlight">
+      <strong>Goal:</strong> Build a reliable document question-answering platform that retrieves evidence from a trusted corpus, generates citation-grounded answers, verifies support at sentence level, and provides measurable evaluation outputs for academic demonstration and report writing.
+    </div>
+
+    <h2>1. Problem Statement</h2>
+    <p>
+      Large language models can produce fluent answers but may hallucinate when the required information is not present in the prompt context. This project addresses that problem by building a reliable Retrieval-Augmented Generation platform that ingests a document corpus, performs hybrid retrieval, reranks evidence, produces citation-aware answers, verifies support, and exposes the full workflow through both API and user interface layers.
+    </p>
+
+    <h2>2. Objectives</h2>
+    <ul>
+      <li>Create a reproducible ingestion pipeline for PDF and text documents.</li>
+      <li>Implement dense retrieval, BM25 retrieval, Reciprocal Rank Fusion, and reranking.</li>
+      <li>Generate grounded answers with explicit citations and refusal behavior for unsupported questions.</li>
+      <li>Add sentence-level verification to reduce hallucination risk.</li>
+      <li>Build an evaluation harness with retrieval and answer quality metrics.</li>
+      <li>Deliver a working React demo, FastAPI backend, Docker deployment, and final report artifacts.</li>
+    </ul>
+
+    <h2>3. System Architecture</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Layer</th>
+          <th>Responsibilities</th>
+          <th>Key Technologies</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Frontend</td>
+          <td>Login, corpus dashboard, upload status, query chat, citation viewer, evaluation dashboard, logs view</td>
+          <td>React, TypeScript, Vite</td>
+        </tr>
+        <tr>
+          <td>API Layer</td>
+          <td>Auth, document management, query submission, evaluation runs, log access, health checks</td>
+          <td>FastAPI</td>
+        </tr>
+        <tr>
+          <td>RAG Services</td>
+          <td>Parsing, chunking, dense retrieval, BM25 retrieval, RRF, reranking, grounded generation, verification</td>
+          <td>LangChain-friendly modular services</td>
+        </tr>
+        <tr>
+          <td>Data and Indexing</td>
+          <td>Document metadata, audit trails, vector index, keyword index, benchmark results</td>
+          <td>PostgreSQL, Qdrant, Whoosh</td>
+        </tr>
+        <tr>
+          <td>Deployment</td>
+          <td>Reproducible local environment, seeded demo corpus, multi-service orchestration</td>
+          <td>Docker Compose</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2>4. Module Breakdown</h2>
+    <h3>4.1 Ingestion and Parsing</h3>
+    <p>
+      Support upload and parsing of PDF and TXT files, extract text page-wise where possible, flatten basic tables to text, attach metadata such as filename, checksum, page, section, and chunk identifiers, and reject scanned PDFs in v1 when no extractable text is found.
+    </p>
+
+    <h3>4.2 Retrieval Pipeline</h3>
+    <p>
+      Chunk documents into overlapping windows of 500-800 tokens with 100-150 token overlap, run dense retrieval and BM25 retrieval in parallel, merge ranked outputs with Reciprocal Rank Fusion, rerank the top candidate set, and pass the strongest evidence set to the generator.
+    </p>
+
+    <h3>4.3 Grounded Generation</h3>
+    <p>
+      Enforce answer generation only from retrieved context, return explicit citations at document and page or section level, and use the exact refusal text <em>Not found in the provided documents.</em> whenever evidence quality is insufficient.
+    </p>
+
+    <h3>4.4 Verification and Evaluation</h3>
+    <p>
+      Verify answer sentences against the evidence set, compute support scores, flag unsupported claims, and run benchmark experiments reporting Recall@k, MRR, nDCG, citation correctness, refusal accuracy, and hallucination rate.
+    </p>
+
+    <h3>4.5 UI and Demo Layer</h3>
+    <p>
+      Deliver a complete demo application with login, corpus view, upload and reindex flows, question answering interface, source inspection, evaluation dashboard, and audit-log views suitable for viva and project review demonstrations.
+    </p>
+
+    <h2>5. Public API Plan</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Endpoint</th>
+          <th>Method</th>
+          <th>Purpose</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>/auth/login</td>
+          <td>POST</td>
+          <td>Authenticate demo users and issue JWT-style access tokens</td>
+        </tr>
+        <tr>
+          <td>/documents/upload</td>
+          <td>POST</td>
+          <td>Upload and ingest a new document into the corpus</td>
+        </tr>
+        <tr>
+          <td>/documents</td>
+          <td>GET</td>
+          <td>List ingested documents and current indexing state</td>
+        </tr>
+        <tr>
+          <td>/documents/{id}/reindex</td>
+          <td>POST</td>
+          <td>Rebuild chunking and retrieval index for an existing document</td>
+        </tr>
+        <tr>
+          <td>/query</td>
+          <td>POST</td>
+          <td>Run retrieval, reranking, generation, verification, and trace output</td>
+        </tr>
+        <tr>
+          <td>/evaluations/run</td>
+          <td>POST</td>
+          <td>Execute the benchmark suite and persist an evaluation run</td>
+        </tr>
+        <tr>
+          <td>/evaluations</td>
+          <td>GET</td>
+          <td>List benchmark run results</td>
+        </tr>
+        <tr>
+          <td>/logs</td>
+          <td>GET</td>
+          <td>Expose audit and debugging logs for admin review</td>
+        </tr>
+        <tr>
+          <td>/health</td>
+          <td>GET</td>
+          <td>Operational readiness check</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2>6. Dataset Strategy</h2>
+    <p>
+      Use a public and reproducible corpus for development and evaluation so the project remains demonstrable without NDA restrictions. The seeded demo corpus will include policy-style, technical, and evaluation-oriented text documents. Additional public PDFs can be added later for stronger results and screenshots.
+    </p>
+
+    <h2>7. Evaluation Strategy</h2>
+    <ul>
+      <li>Retrieval: Recall@k, MRR, nDCG</li>
+      <li>Answer quality: keyword correctness, citation correctness, refusal correctness</li>
+      <li>Safety: hallucination rate and unsupported-sentence ratio</li>
+      <li>Comparisons: dense-only, BM25-only, hybrid, hybrid + rerank, hybrid + rerank + verification</li>
+    </ul>
+
+    <h2>8. Risks and Mitigations</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Risk</th>
+          <th>Impact</th>
+          <th>Mitigation</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Weak retrieval quality on mixed queries</td>
+          <td>Poor answer grounding</td>
+          <td>Use hybrid retrieval, chunk tuning, metadata, and reranking</td>
+        </tr>
+        <tr>
+          <td>Hallucinations despite retrieval</td>
+          <td>Loss of trust</td>
+          <td>Use strict prompting, refusal threshold, and sentence verification</td>
+        </tr>
+        <tr>
+          <td>Scanned PDFs without extractable text</td>
+          <td>Ingestion failure</td>
+          <td>Reject in v1 and document OCR as future work</td>
+        </tr>
+        <tr>
+          <td>Solo-project delivery pressure</td>
+          <td>Time overruns</td>
+          <td>Finish a usable MVP first, then improve polish and metrics</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2>9. Timeline</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Window</th>
+          <th>Deliverables</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>March 14-16, 2026</td>
+          <td>Project-plan document, architecture lock, API list, acceptance criteria</td>
+        </tr>
+        <tr>
+          <td>March 17-23, 2026</td>
+          <td>FastAPI and React scaffolds, auth flow, document and query models</td>
+        </tr>
+        <tr>
+          <td>March 24-30, 2026</td>
+          <td>Ingestion, chunking, dense retrieval, BM25, corpus dashboard</td>
+        </tr>
+        <tr>
+          <td>March 31-April 6, 2026</td>
+          <td>Hybrid fusion, reranking, grounded prompting, citations, refusal logic</td>
+        </tr>
+        <tr>
+          <td>April 7-13, 2026</td>
+          <td>Verification, benchmark harness, metrics dashboard</td>
+        </tr>
+        <tr>
+          <td>April 14-20, 2026</td>
+          <td>Audit logs, role checks, source viewer, UI polish</td>
+        </tr>
+        <tr>
+          <td>April 21-30, 2026</td>
+          <td>Dockerization, ablations, plots, demo script, MVP freeze</td>
+        </tr>
+        <tr>
+          <td>May 1-15, 2026</td>
+          <td>Final report material, screenshots, results discussion, viva preparation</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2>10. Final Deliverables</h2>
+    <ul>
+      <li>Working FastAPI backend and React frontend</li>
+      <li>Seeded public corpus and benchmark dataset</li>
+      <li>Docker Compose deployment files</li>
+      <li>Evaluation outputs and charts for the final report</li>
+      <li>Project plan document and final report content support</li>
+    </ul>
+  </body>
+</html>
+

@@ -1,0 +1,98 @@
+from __future__ import annotations
+
+from pathlib import Path
+import tempfile
+import unittest
+
+from app.core.config import Settings
+from app.services.models import HashedEmbeddingModel, HeuristicChatModel, OverlapVerifier
+from app.services.pipeline import RAGPipeline
+from app.services.storage import AuditLogStore, EvaluationStore, KnowledgeBaseStore
+
+
+class PipelineTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self.temp_dir = tempfile.TemporaryDirectory()
+        root = Path(self.temp_dir.name)
+        corpus_dir = root / "corpus"
+        uploads_dir = root / "uploads"
+        eval_dir = root / "evaluations"
+        corpus_dir.mkdir()
+        uploads_dir.mkdir()
+        eval_dir.mkdir()
+
+        (corpus_dir / "doc1.txt").write_text(
+            "Reliable answers should cite source passages and refuse unsupported claims.",
+            encoding="utf-8",
+        )
+        (eval_dir / "benchmark.json").write_text(
+            """
+            [
+              {
+                "id": "sample-1",
+                "question": "What should reliable answers do?",
+                "expected_document": "doc1.txt",
+                "expected_keywords": ["cite", "refuse"],
+                "negative": false
+              },
+              {
+                "id": "sample-2",
+                "question": "What does the corpus say about spacecraft engines?",
+                "expected_document": "",
+                "expected_keywords": [],
+                "negative": true
+              }
+            ]
+            """.strip(),
+            encoding="utf-8",
+        )
+
+        self.settings = Settings(
+            app_name="Test",
+            app_version="0.1.0",
+            jwt_secret="secret",
+            access_token_expiry_minutes=60,
+            upload_dir=uploads_dir,
+            corpus_dir=corpus_dir,
+            benchmark_path=eval_dir / "benchmark.json",
+            dense_top_k=10,
+            bm25_top_k=10,
+            rerank_top_k=10,
+            answer_top_k=5,
+            chunk_size=150,
+            chunk_overlap=20,
+            refusal_text="Not found in the provided documents.",
+        )
+        self.pipeline = RAGPipeline(
+            settings=self.settings,
+            store=KnowledgeBaseStore(),
+            audit_store=AuditLogStore(),
+            evaluation_store=EvaluationStore(),
+            embedder=HashedEmbeddingModel(),
+            chat_model=HeuristicChatModel(),
+            verifier=OverlapVerifier(),
+        )
+        self.pipeline.bootstrap()
+
+    def tearDown(self) -> None:
+        self.temp_dir.cleanup()
+
+    def test_duplicate_document_is_not_reingested(self) -> None:
+        original = self.pipeline.list_documents()[0]
+        duplicate = self.pipeline.ingest_file(Path(original.source_path), actor="tester")
+        self.assertEqual(original.id, duplicate.id)
+        self.assertEqual(len(self.pipeline.list_documents()), 1)
+
+    def test_negative_query_uses_refusal(self) -> None:
+        result = self.pipeline.query("What does the corpus say about orbital mechanics?", actor="tester")
+        self.assertEqual(result.answer, self.settings.refusal_text)
+
+    def test_benchmark_run_returns_metrics(self) -> None:
+        run = self.pipeline.run_benchmark(actor="tester")
+        self.assertEqual(run.sample_count, 2)
+        self.assertGreaterEqual(run.refusal_accuracy, 0.5)
+
+
+if __name__ == "__main__":
+    unittest.main()
+

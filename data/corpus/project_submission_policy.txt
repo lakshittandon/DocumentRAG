@@ -1,0 +1,5 @@
+The final year project demo should show the end-to-end workflow from document upload to grounded question answering.
+Students should be able to explain the architecture, dataset choice, evaluation methodology, and limitations of the system.
+If evidence is insufficient, the system should refuse to answer instead of inventing unsupported content.
+Deployment artifacts such as Docker Compose files and setup documentation improve reproducibility for evaluators.
+
