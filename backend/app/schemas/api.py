@@ -33,6 +33,11 @@ class ReindexResponse(BaseModel):
     document: DocumentResponse
 
 
+class DeleteDocumentResponse(BaseModel):
+    message: str
+    document_id: str
+
+
 class QueryRequest(BaseModel):
     question: str = Field(min_length=3)
 

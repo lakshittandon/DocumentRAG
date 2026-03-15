@@ -145,6 +145,13 @@ export const api = {
       token,
     ),
 
+  deleteDocument: (documentId: string, token: string) =>
+    request<{ message: string; document_id: string }>(
+      `/documents/${documentId}`,
+      { method: "DELETE" },
+      token,
+    ),
+
   query: (question: string, token: string) =>
     request<QueryResponse>(
       "/query",

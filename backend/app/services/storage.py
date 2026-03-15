@@ -54,6 +54,13 @@ class KnowledgeBaseStore:
         self._chunks_by_document[document_id] = list(chunks)
         return updated
 
+    def delete_document(self, document_id: str) -> DocumentRecord | None:
+        document = self._documents.pop(document_id, None)
+        if document is None:
+            return None
+        self._chunks_by_document.pop(document_id, None)
+        return document
+
     def all_chunks(self) -> list:
         chunks: list = []
         for document_chunks in self._chunks_by_document.values():

@@ -11,6 +11,7 @@ from app.core.container import container
 from app.domain.types import UserAccount
 from app.schemas.api import (
     AuditLogResponse,
+    DeleteDocumentResponse,
     DocumentResponse,
     EvaluationResponse,
     HealthResponse,
@@ -133,6 +134,23 @@ def reindex_document(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
 
     return ReindexResponse(message="Document reindexed successfully.", document=_map_document(document))
+
+
+@router.delete("/documents/{document_id}", response_model=DeleteDocumentResponse)
+def delete_document(
+    document_id: str,
+    current_user: UserAccount = Depends(get_current_user),
+    app_container=Depends(get_container),
+) -> DeleteDocumentResponse:
+    try:
+        document = app_container.pipeline.delete_document(document_id, actor=current_user.username)
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+
+    return DeleteDocumentResponse(
+        message=f"Deleted {document.filename} successfully.",
+        document_id=document.id,
+    )
 
 
 @router.post("/query", response_model=QueryResponse)

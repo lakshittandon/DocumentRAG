@@ -92,7 +92,13 @@ class PipelineTests(unittest.TestCase):
         self.assertEqual(run.sample_count, 2)
         self.assertGreaterEqual(run.refusal_accuracy, 0.5)
 
+    def test_delete_document_removes_it_from_corpus(self) -> None:
+        document = self.pipeline.list_documents()[0]
+        deleted = self.pipeline.delete_document(document.id, actor="tester")
+        self.assertEqual(deleted.id, document.id)
+        self.assertEqual(len(self.pipeline.list_documents()), 0)
+        self.assertFalse(Path(document.source_path).exists())
+
 
 if __name__ == "__main__":
     unittest.main()
-

@@ -1,0 +1,36 @@
+Metadata-Version: 2.4
+Name: reliable-rag-backend
+Version: 0.1.0
+Summary: Backend for a reliable document intelligence platform using hybrid RAG.
+Requires-Python: >=3.11
+Description-Content-Type: text/markdown
+Requires-Dist: fastapi>=0.115.0
+Requires-Dist: uvicorn[standard]>=0.32.0
+Requires-Dist: python-multipart>=0.0.9
+Requires-Dist: pydantic>=2.9.0
+Requires-Dist: langchain>=0.3.0
+Requires-Dist: qdrant-client>=1.12.0
+Requires-Dist: whoosh>=2.7.4
+Requires-Dist: pypdf>=5.0.0
+Provides-Extra: dev
+Requires-Dist: pytest>=8.3.0; extra == "dev"
+Requires-Dist: httpx>=0.27.0; extra == "dev"
+
+# Backend
+
+The backend exposes a FastAPI service for authentication, document ingestion, query handling, benchmark evaluation, and audit logging.
+
+## Local Development
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -e .[dev]
+uvicorn app.main:app --reload
+```
+
+## Notes
+
+- The current implementation supports `MODEL_PROVIDER=gemini` using the Gemini REST API and `MODEL_PROVIDER=local` as an offline fallback.
+- Set `GEMINI_API_KEY` and keep `GEMINI_GENERATION_MODEL=gemini-2.5-flash-lite` plus `GEMINI_EMBEDDING_MODEL=gemini-embedding-001` to use the hosted Gemini path.
+- The application still uses in-memory repositories; PostgreSQL and Qdrant are part of the target architecture but are not yet wired into persistence.

@@ -95,6 +95,25 @@ class RAGPipeline:
         )
         return updated
 
+    def delete_document(self, document_id: str, actor: str) -> DocumentRecord:
+        document = self.store.get_document(document_id)
+        if not document:
+            raise ValueError("Document not found.")
+
+        deleted = self.store.delete_document(document_id)
+        self.retrieval_engine.update(self.store.all_chunks())
+
+        source_path = Path(document.source_path)
+        if source_path.exists():
+            source_path.unlink()
+
+        self.audit_store.append(
+            actor=actor,
+            action="document.delete",
+            detail=f"Deleted {document.filename} from the corpus.",
+        )
+        return deleted or document
+
     def list_documents(self) -> list[DocumentRecord]:
         return self.store.list_documents()
 

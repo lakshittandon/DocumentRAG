@@ -113,6 +113,11 @@ button {
   background: rgba(16, 42, 67, 0.08);
 }
 
+.danger-button {
+  color: #991b1b;
+  background: rgba(220, 38, 38, 0.1);
+ }
+
 .primary-button:hover,
 .secondary-button:hover,
 .nav-button:hover {
@@ -326,4 +331,3 @@ button {
     grid-template-columns: 1fr;
   }
 }
-

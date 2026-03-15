@@ -7,9 +7,10 @@ interface DashboardPageProps {
   health: HealthStatus | null;
   onUpload: (file: File) => Promise<void>;
   onReindex: (documentId: string) => Promise<void>;
+  onDelete: (document: DocumentRecord) => Promise<void>;
 }
 
-export function DashboardPage({ documents, health, onUpload, onReindex }: DashboardPageProps) {
+export function DashboardPage({ documents, health, onUpload, onReindex, onDelete }: DashboardPageProps) {
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState("");
 
@@ -103,6 +104,24 @@ export function DashboardPage({ documents, health, onUpload, onReindex }: Dashbo
                 onClick={() => onReindex(document.id)}
               >
                 Reindex
+              </button>
+              <button
+                type="button"
+                className="secondary-button danger-button"
+                onClick={() => {
+                  const confirmed = window.confirm(
+                    `Delete ${document.filename} from the corpus? This removes the file from local storage too.`,
+                  );
+                  if (confirmed) {
+                    void onDelete(document).catch((caughtError) => {
+                      setError(
+                        caughtError instanceof Error ? caughtError.message : "Delete failed.",
+                      );
+                    });
+                  }
+                }}
+              >
+                Delete
               </button>
             </article>
           ))}

@@ -16,8 +16,11 @@ import { LogsPage } from "./pages/LogsPage";
 import { LoginPage } from "./pages/LoginPage";
 import { QueryPage } from "./pages/QueryPage";
 
+const DEMO_USERNAME = "admin";
+const DEMO_PASSWORD = "admin123";
+
 export default function App() {
-  const { auth, isReady, isAuthenticated, login, logout } = useAuth();
+  const { auth, isReady, isAuthenticated, login } = useAuth();
   const [activeView, setActiveView] = useState<AppView>("dashboard");
   const [documents, setDocuments] = useState<DocumentRecord[]>([]);
   const [health, setHealth] = useState<HealthStatus | null>(null);
@@ -25,6 +28,8 @@ export default function App() {
   const [logs, setLogs] = useState<AuditLogEntry[]>([]);
   const [queryResult, setQueryResult] = useState<QueryResponse | null>(null);
   const [globalError, setGlobalError] = useState("");
+  const [isBootstrappingDemo, setIsBootstrappingDemo] = useState(false);
+  const [bootstrapFailed, setBootstrapFailed] = useState(false);
 
   const loadAppData = async () => {
     if (!auth?.accessToken) {
@@ -54,11 +59,36 @@ export default function App() {
     }
   }, [isAuthenticated, auth?.accessToken]);
 
+  useEffect(() => {
+    if (!isReady || isAuthenticated || isBootstrappingDemo || bootstrapFailed) {
+      return;
+    }
+
+    setIsBootstrappingDemo(true);
+    setGlobalError("");
+
+    void login(DEMO_USERNAME, DEMO_PASSWORD)
+      .catch((caughtError) => {
+        setBootstrapFailed(true);
+        setGlobalError(
+          caughtError instanceof Error
+            ? caughtError.message
+            : "Unable to enter the demo workspace automatically.",
+        );
+      })
+      .finally(() => {
+        setIsBootstrappingDemo(false);
+      });
+  }, [bootstrapFailed, isAuthenticated, isBootstrappingDemo, isReady, login]);
+
   if (!isReady) {
     return <div className="loading-shell">Preparing console...</div>;
   }
 
   if (!isAuthenticated || !auth) {
+    if (isBootstrappingDemo) {
+      return <div className="loading-shell">Entering demo workspace...</div>;
+    }
     return <LoginPage onLogin={login} />;
   }
 
@@ -69,6 +99,20 @@ export default function App() {
 
   const handleReindex = async (documentId: string) => {
     await api.reindexDocument(documentId, auth.accessToken);
+    await loadAppData();
+  };
+
+  const handleDelete = async (document: DocumentRecord) => {
+    await api.deleteDocument(document.id, auth.accessToken);
+    setQueryResult((current) => {
+      if (!current) {
+        return current;
+      }
+      const removedDocumentUsed = current.citations.some(
+        (citation) => citation.document_id === document.id,
+      );
+      return removedDocumentUsed ? null : current;
+    });
     await loadAppData();
   };
 
@@ -88,8 +132,7 @@ export default function App() {
     <Shell
       activeView={activeView}
       onChangeView={setActiveView}
-      onLogout={logout}
-      username={auth.username}
+      username="Demo Workspace"
     >
       {globalError ? <p className="error-banner">{globalError}</p> : null}
 
@@ -99,6 +142,7 @@ export default function App() {
           health={health}
           onUpload={handleUpload}
           onReindex={handleReindex}
+          onDelete={handleDelete}
         />
       )}
 
@@ -114,4 +158,3 @@ export default function App() {
     </Shell>
   );
 }
-

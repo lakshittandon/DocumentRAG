@@ -5,8 +5,8 @@ export type AppView = "dashboard" | "query" | "evaluations" | "logs";
 interface ShellProps extends PropsWithChildren {
   activeView: AppView;
   onChangeView: (view: AppView) => void;
-  onLogout: () => void;
   username: string;
+  onLogout?: () => void;
 }
 
 const VIEWS: Array<{ id: AppView; label: string }> = [
@@ -43,9 +43,11 @@ export function Shell({ activeView, onChangeView, onLogout, username, children }
 
         <div className="sidebar-footer">
           <p className="user-chip">{username}</p>
-          <button type="button" className="secondary-button" onClick={onLogout}>
-            Logout
-          </button>
+          {onLogout ? (
+            <button type="button" className="secondary-button" onClick={onLogout}>
+              Logout
+            </button>
+          ) : null}
         </div>
       </aside>
 
@@ -53,4 +55,3 @@ export function Shell({ activeView, onChangeView, onLogout, username, children }
     </div>
   );
 }
-

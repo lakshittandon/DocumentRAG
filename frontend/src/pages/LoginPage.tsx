@@ -30,7 +30,7 @@ export function LoginPage({ onLogin }: LoginPageProps) {
         <p className="eyebrow">Document Intelligence Platform</p>
         <h1>Reliable RAG Demo Console</h1>
         <p className="login-copy">
-          Sign in to manage the corpus, run queries with citations, evaluate the benchmark, and inspect the audit trail.
+          The demo usually enters automatically. This screen is kept only as a fallback while registration and custom user management are still pending.
         </p>
 
         <form className="stack" onSubmit={handleSubmit}>
