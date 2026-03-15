@@ -93,7 +93,9 @@ export function DashboardPage({ documents, health, onUpload, onReindex, onDelete
                 <div>
                   <h4>{document.filename}</h4>
                   <p className="muted">
-                    {document.page_count} pages • {document.chunk_count} chunks
+                    {document.status === "processing"
+                      ? "Indexing in background..."
+                      : `${document.page_count} pages • ${document.chunk_count} chunks`}
                   </p>
                 </div>
                 <span className="status-chip">{document.status}</span>
@@ -101,10 +103,12 @@ export function DashboardPage({ documents, health, onUpload, onReindex, onDelete
 
               <p className="muted">Checksum: {document.checksum.slice(0, 12)}...</p>
               <p className="muted">Updated: {new Date(document.updated_at).toLocaleString()}</p>
+              {document.error_message ? <p className="error-text">{document.error_message}</p> : null}
 
               <button
                 type="button"
                 className="secondary-button"
+                disabled={document.status === "processing"}
                 onClick={() => onReindex(document.id)}
               >
                 Reindex
@@ -112,6 +116,7 @@ export function DashboardPage({ documents, health, onUpload, onReindex, onDelete
               <button
                 type="button"
                 className="secondary-button danger-button"
+                disabled={document.status === "processing"}
                 onClick={() => {
                   const confirmed = window.confirm(
                     `Delete ${document.filename} from the corpus? This removes the file from local storage too.`,

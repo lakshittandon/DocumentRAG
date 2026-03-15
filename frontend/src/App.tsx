@@ -60,6 +60,18 @@ export default function App() {
   }, [isAuthenticated, auth?.accessToken]);
 
   useEffect(() => {
+    if (!isAuthenticated || documents.every((document) => document.status !== "processing")) {
+      return;
+    }
+
+    const intervalId = window.setInterval(() => {
+      void loadAppData();
+    }, 3000);
+
+    return () => window.clearInterval(intervalId);
+  }, [documents, isAuthenticated]);
+
+  useEffect(() => {
     if (!isReady || isAuthenticated || isBootstrappingDemo || bootstrapFailed) {
       return;
     }

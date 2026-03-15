@@ -27,6 +27,7 @@ class DocumentRecord:
     status: str
     page_count: int
     chunk_count: int
+    error_message: str | None = None
     created_at: str = field(default_factory=utc_now_iso)
     updated_at: str = field(default_factory=utc_now_iso)
 
@@ -158,4 +159,3 @@ class AuditLogEntry:
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
-

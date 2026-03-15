@@ -42,7 +42,7 @@ class KnowledgeBaseStore:
         return None
 
     def save_document(self, document: DocumentRecord, chunks: list) -> DocumentRecord:
-        stored = replace(document, chunk_count=len(chunks))
+        stored = replace(document, chunk_count=len(chunks), updated_at=utc_now_iso())
         self._documents[stored.id] = stored
         self._chunks_by_document[stored.id] = list(chunks)
         return stored
@@ -52,6 +52,12 @@ class KnowledgeBaseStore:
         updated = replace(document, chunk_count=len(chunks), updated_at=utc_now_iso())
         self._documents[document_id] = updated
         self._chunks_by_document[document_id] = list(chunks)
+        return updated
+
+    def update_document(self, document: DocumentRecord) -> DocumentRecord:
+        updated = replace(document, updated_at=utc_now_iso())
+        self._documents[updated.id] = updated
+        self._chunks_by_document.setdefault(updated.id, [])
         return updated
 
     def delete_document(self, document_id: str) -> DocumentRecord | None:

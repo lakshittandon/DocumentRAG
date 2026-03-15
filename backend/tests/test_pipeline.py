@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 import tempfile
+import time
 import unittest
 
 from app.core.config import Settings
@@ -98,6 +99,21 @@ class PipelineTests(unittest.TestCase):
         self.assertEqual(deleted.id, document.id)
         self.assertEqual(len(self.pipeline.list_documents()), 0)
         self.assertFalse(Path(document.source_path).exists())
+
+    def test_queue_ingest_file_returns_processing_then_indexes(self) -> None:
+        upload_path = self.settings.upload_dir / "queued.txt"
+        upload_path.write_text("Queued upload should become indexed after background processing.", encoding="utf-8")
+        queued = self.pipeline.queue_ingest_file(upload_path, actor="tester", content_type="text/plain")
+        self.assertEqual(queued.status, "processing")
+
+        for _ in range(50):
+            current = self.pipeline.list_documents()[0]
+            if current.status == "indexed":
+                break
+            time.sleep(0.02)
+        current = self.pipeline.list_documents()[0]
+        self.assertEqual(current.status, "indexed")
+        self.assertGreaterEqual(current.chunk_count, 1)
 
 
 if __name__ == "__main__":

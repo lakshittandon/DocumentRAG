@@ -24,6 +24,7 @@ class DocumentResponse(BaseModel):
     status: str
     page_count: int
     chunk_count: int
+    error_message: str | None = None
     created_at: str
     updated_at: str
 

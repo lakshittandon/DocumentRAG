@@ -102,7 +102,7 @@ def list_documents(
     return [_map_document(document) for document in app_container.pipeline.list_documents()]
 
 
-@router.post("/documents/upload", response_model=DocumentResponse)
+@router.post("/documents/upload", response_model=DocumentResponse, status_code=status.HTTP_202_ACCEPTED)
 async def upload_document(
     file: UploadFile = File(...),
     current_user: UserAccount = Depends(get_current_user),
@@ -128,7 +128,11 @@ async def upload_document(
         )
 
     try:
-        document = app_container.pipeline.ingest_file(destination, actor=current_user.username)
+        document = app_container.pipeline.queue_ingest_file(
+            destination,
+            actor=current_user.username,
+            content_type=file.content_type or "application/octet-stream",
+        )
         return _map_document(document)
     except UnsupportedDocumentError as exc:
         destination.unlink(missing_ok=True)

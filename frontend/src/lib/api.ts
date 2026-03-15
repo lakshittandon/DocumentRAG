@@ -14,6 +14,7 @@ export interface DocumentRecord {
   status: string;
   page_count: number;
   chunk_count: number;
+  error_message?: string | null;
   created_at: string;
   updated_at: string;
 }
