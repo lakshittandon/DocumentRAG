@@ -32,6 +32,7 @@ class Settings:
     gemini_embedding_model: str = "gemini-embedding-001"
     gemini_timeout_seconds: int = 30
     gemini_embedding_dimensions: int = 768
+    max_upload_size_mb: int = 10
 
     def ensure_directories(self) -> None:
         self.upload_dir.mkdir(parents=True, exist_ok=True)
@@ -70,6 +71,7 @@ def load_settings() -> Settings:
         gemini_embedding_model=os.getenv("GEMINI_EMBEDDING_MODEL", "gemini-embedding-001"),
         gemini_timeout_seconds=int(os.getenv("GEMINI_TIMEOUT_SECONDS", "30")),
         gemini_embedding_dimensions=int(os.getenv("GEMINI_EMBEDDING_DIMENSIONS", "768")),
+        max_upload_size_mb=int(os.getenv("MAX_UPLOAD_SIZE_MB", "10")),
     )
 
 

@@ -33,6 +33,7 @@ uvicorn app.main:app --reload
 ```
 
 Copy `.env.example` to `.env` at the repo root and set `GEMINI_API_KEY` before starting the backend if you want the real Gemini integration. Set `MODEL_PROVIDER=local` to stay on the offline fallback adapters.
+The default upload limit is `10 MB` to avoid long synchronous indexing delays on very large PDFs.
 
 ### Frontend
 

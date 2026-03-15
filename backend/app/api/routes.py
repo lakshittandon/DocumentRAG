@@ -90,6 +90,7 @@ def health(app_container=Depends(get_container)) -> HealthResponse:
             if app_container.settings.model_provider == "gemini"
             else "local-hashed"
         ),
+        max_upload_size_mb=app_container.settings.max_upload_size_mb,
     )
 
 
@@ -110,9 +111,21 @@ async def upload_document(
     filename = Path(file.filename or "upload.txt").name
     timestamp = int(time.time())
     destination = app_container.settings.upload_dir / f"{timestamp}_{filename}"
+    max_upload_bytes = app_container.settings.max_upload_size_mb * 1024 * 1024
 
     with destination.open("wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
+
+    file_size = destination.stat().st_size
+    if file_size > max_upload_bytes:
+        destination.unlink(missing_ok=True)
+        raise HTTPException(
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            detail=(
+                f"File exceeds the {app_container.settings.max_upload_size_mb} MB upload limit. "
+                f"Please upload a smaller file or split the PDF."
+            ),
+        )
 
     try:
         document = app_container.pipeline.ingest_file(destination, actor=current_user.username)

@@ -108,3 +108,4 @@ class HealthResponse(BaseModel):
     model_provider: str
     generation_model: str
     embedding_model: str
+    max_upload_size_mb: int

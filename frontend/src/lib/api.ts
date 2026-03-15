@@ -84,6 +84,7 @@ export interface HealthStatus {
   model_provider: string;
   generation_model: string;
   embedding_model: string;
+  max_upload_size_mb: number;
 }
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000";
@@ -107,8 +108,13 @@ async function request<T>(
   });
 
   if (!response.ok) {
-    const detail = await response.text();
-    throw new Error(detail || "Request failed.");
+    const raw = await response.text();
+    try {
+      const parsed = JSON.parse(raw) as { detail?: string };
+      throw new Error(parsed.detail || "Request failed.");
+    } catch {
+      throw new Error(raw || "Request failed.");
+    }
   }
 
   return response.json() as Promise<T>;

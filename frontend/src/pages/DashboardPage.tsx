@@ -68,6 +68,10 @@ export function DashboardPage({ documents, health, onUpload, onReindex, onDelete
           <span className="panel-tag">{isUploading ? "Uploading" : "Ready"}</span>
         </div>
 
+        <p className="muted">
+          Maximum upload size: {health?.max_upload_size_mb ?? 10} MB. Large PDFs should be split before upload.
+        </p>
+
         <label className="upload-zone">
           <input type="file" accept=".txt,.md,.pdf" onChange={handleFileChange} />
           <span>Choose a `.txt`, `.md`, or `.pdf` file</span>
