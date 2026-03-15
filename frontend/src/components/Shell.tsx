@@ -5,7 +5,7 @@ export type AppView = "dashboard" | "query" | "evaluations" | "logs";
 interface ShellProps extends PropsWithChildren {
   activeView: AppView;
   onChangeView: (view: AppView) => void;
-  username: string;
+  username?: string;
   onLogout?: () => void;
 }
 
@@ -21,7 +21,6 @@ export function Shell({ activeView, onChangeView, onLogout, username, children }
     <div className="app-shell">
       <aside className="sidebar">
         <div className="brand-panel">
-          <p className="eyebrow">Final Year Project</p>
           <h1>Reliable RAG Platform</h1>
           <p className="brand-copy">
             Hybrid retrieval, grounded answers, verification, and evaluation in one demo system.
@@ -42,7 +41,7 @@ export function Shell({ activeView, onChangeView, onLogout, username, children }
         </nav>
 
         <div className="sidebar-footer">
-          <p className="user-chip">{username}</p>
+          {username ? <p className="user-chip">{username}</p> : null}
           {onLogout ? (
             <button type="button" className="secondary-button" onClick={onLogout}>
               Logout

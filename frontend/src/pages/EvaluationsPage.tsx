@@ -32,7 +32,10 @@ export function EvaluationsPage({ runs, onRunEvaluation }: EvaluationsPageProps)
           <p className="eyebrow">Evaluation Lab</p>
           <h2>Benchmark retrieval and answer faithfulness</h2>
           <p>
-            Run the seeded benchmark to capture Recall@5, MRR, nDCG@5, answer accuracy, citation accuracy, refusal accuracy, and hallucination rate.
+            Run the fixed benchmark to capture Recall@5, MRR, nDCG@5, answer accuracy, citation accuracy, refusal accuracy, and hallucination rate.
+          </p>
+          <p className="muted">
+            These metrics are measured only against the fixed benchmark corpus. User-uploaded documents do not affect this evaluation.
           </p>
         </div>
         <button type="button" className="primary-button" onClick={handleRun} disabled={isRunning}>
@@ -98,4 +101,3 @@ export function EvaluationsPage({ runs, onRunEvaluation }: EvaluationsPageProps)
     </div>
   );
 }
-

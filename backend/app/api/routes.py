@@ -73,7 +73,10 @@ def login(payload: LoginRequest, app_container=Depends(get_container)) -> TokenR
 
 @router.get("/health", response_model=HealthResponse)
 def health(app_container=Depends(get_container)) -> HealthResponse:
-    benchmark_ready = app_container.settings.benchmark_path.exists()
+    benchmark_ready = (
+        app_container.settings.benchmark_path.exists()
+        and any(app_container.settings.benchmark_corpus_dir.glob("*"))
+    )
     return HealthResponse(
         status="ok",
         version=app_container.settings.app_version,

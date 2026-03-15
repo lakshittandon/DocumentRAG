@@ -22,10 +22,9 @@
   },
   {
     "id": "q4",
-    "question": "What does the corpus say about quantum processors?",
+    "question": "Describe xenobiology protocols for Martian coral reefs.",
     "expected_document": "",
     "expected_keywords": [],
     "negative": true
   }
 ]
-

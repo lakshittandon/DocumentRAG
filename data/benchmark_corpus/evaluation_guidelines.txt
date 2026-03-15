@@ -1,0 +1,1 @@
+Retrieval quality is commonly measured with Recall@k, Mean Reciprocal Rank, and nDCG. Recall checks whether the relevant document was retrieved, Reciprocal Rank rewards early ranking of the correct result, and nDCG measures how well relevant results are ordered near the top.

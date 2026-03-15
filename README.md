@@ -51,6 +51,18 @@ npm run dev
 
 The exported file is written to `docs/Reliable_RAG_Project_Plan.docx`.
 
+## Public Deployment
+
+For a single public resume/demo URL, deploy the repository on Render using [render.yaml](/Users/lakshittandon/Desktop/DocumentRAG/render.yaml).
+
+The deployment image:
+
+- builds the React frontend during the Docker build
+- serves the frontend from the FastAPI app
+- exposes the backend and UI from one public URL
+- keeps the user corpus empty by default
+- runs Evaluation Lab against the fixed benchmark corpus only
+
 ## Default Demo Credentials
 
 - Username: `admin`

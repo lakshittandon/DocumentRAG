@@ -127,5 +127,5 @@ class EvaluationRunner:
             citation_accuracy=round(citation_accuracy(results, benchmark), 3),
             refusal_accuracy=round(refusal_accuracy(results, benchmark, self.refusal_text), 3),
             hallucination_rate=round(hallucination_rate(results), 3),
-            notes="Automated benchmark run using the current seeded corpus and pipeline configuration.",
+            notes="Automated benchmark run using the fixed benchmark corpus and internal evaluation harness only.",
         )

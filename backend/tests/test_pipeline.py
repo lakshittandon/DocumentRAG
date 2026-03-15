@@ -16,14 +16,20 @@ class PipelineTests(unittest.TestCase):
         self.temp_dir = tempfile.TemporaryDirectory()
         root = Path(self.temp_dir.name)
         corpus_dir = root / "corpus"
+        benchmark_corpus_dir = root / "benchmark_corpus"
         uploads_dir = root / "uploads"
         eval_dir = root / "evaluations"
         corpus_dir.mkdir()
+        benchmark_corpus_dir.mkdir()
         uploads_dir.mkdir()
         eval_dir.mkdir()
 
         (corpus_dir / "doc1.txt").write_text(
             "Reliable answers should cite source passages and refuse unsupported claims.",
+            encoding="utf-8",
+        )
+        (benchmark_corpus_dir / "benchmark_doc.txt").write_text(
+            "Evaluation samples use a fixed benchmark corpus with citations, retrieval metrics, and refusal handling.",
             encoding="utf-8",
         )
         (eval_dir / "benchmark.json").write_text(
@@ -32,13 +38,13 @@ class PipelineTests(unittest.TestCase):
               {
                 "id": "sample-1",
                 "question": "What should reliable answers do?",
-                "expected_document": "doc1.txt",
-                "expected_keywords": ["cite", "refuse"],
+                "expected_document": "benchmark_doc.txt",
+                "expected_keywords": ["citations", "refusal"],
                 "negative": false
               },
               {
                 "id": "sample-2",
-                "question": "What does the corpus say about spacecraft engines?",
+                "question": "Describe xenobiology protocols for Martian coral reefs.",
                 "expected_document": "",
                 "expected_keywords": [],
                 "negative": true
@@ -55,6 +61,7 @@ class PipelineTests(unittest.TestCase):
             access_token_expiry_minutes=60,
             upload_dir=uploads_dir,
             corpus_dir=corpus_dir,
+            benchmark_corpus_dir=benchmark_corpus_dir,
             benchmark_path=eval_dir / "benchmark.json",
             dense_top_k=10,
             bm25_top_k=10,

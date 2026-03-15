@@ -1,0 +1,1 @@
+Citation-aware answers improve trust in a RAG system because each answer can point back to the source passage that supports it. Grounded citations help users verify where the information came from and reduce blind trust in unsupported claims.

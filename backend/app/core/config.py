@@ -17,6 +17,7 @@ class Settings:
     access_token_expiry_minutes: int
     upload_dir: Path
     corpus_dir: Path
+    benchmark_corpus_dir: Path
     benchmark_path: Path
     dense_top_k: int
     bm25_top_k: int
@@ -37,12 +38,16 @@ class Settings:
     def ensure_directories(self) -> None:
         self.upload_dir.mkdir(parents=True, exist_ok=True)
         self.corpus_dir.mkdir(parents=True, exist_ok=True)
+        self.benchmark_corpus_dir.mkdir(parents=True, exist_ok=True)
         self.benchmark_path.parent.mkdir(parents=True, exist_ok=True)
 
 
 def load_settings() -> Settings:
     upload_dir = Path(os.getenv("UPLOAD_DIR", ROOT_DIR / "data" / "uploads"))
     corpus_dir = Path(os.getenv("CORPUS_DIR", ROOT_DIR / "data" / "corpus"))
+    benchmark_corpus_dir = Path(
+        os.getenv("BENCHMARK_CORPUS_DIR", ROOT_DIR / "data" / "benchmark_corpus")
+    )
     benchmark_path = Path(
         os.getenv("BENCHMARK_PATH", ROOT_DIR / "data" / "evaluations" / "demo_benchmark.json")
     )
@@ -54,6 +59,7 @@ def load_settings() -> Settings:
         access_token_expiry_minutes=int(os.getenv("TOKEN_EXPIRY_MINUTES", "720")),
         upload_dir=upload_dir,
         corpus_dir=corpus_dir,
+        benchmark_corpus_dir=benchmark_corpus_dir,
         benchmark_path=benchmark_path,
         dense_top_k=int(os.getenv("DENSE_TOP_K", "20")),
         bm25_top_k=int(os.getenv("BM25_TOP_K", "20")),

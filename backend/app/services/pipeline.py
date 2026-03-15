@@ -8,7 +8,14 @@ from app.core.config import Settings
 from app.domain.types import Citation, DocumentRecord, QueryResult
 from app.services.chunking import build_chunks
 from app.services.evaluation import EvaluationRunner, load_benchmark
-from app.services.models import ChatModel, EmbeddingModel, Verifier
+from app.services.models import (
+    ChatModel,
+    EmbeddingModel,
+    HashedEmbeddingModel,
+    HeuristicChatModel,
+    OverlapVerifier,
+    Verifier,
+)
 from app.services.parsing import ParsedDocument, UnsupportedDocumentError, parse_document, sha256_file
 from app.services.retrieval import RetrievalEngine
 from app.services.storage import AuditLogStore, EvaluationStore, KnowledgeBaseStore
@@ -212,26 +219,99 @@ class RAGPipeline:
 
     def query(self, question: str, actor: str) -> QueryResult:
         with self._lock:
-            dense_hits = self.retrieval_engine.dense_retrieve(question, self.settings.dense_top_k)
-            keyword_hits = self.retrieval_engine.keyword_retrieve(question, self.settings.bm25_top_k)
-            trace = self.retrieval_engine.fuse_and_rerank(
-                query=question,
-                dense_hits=dense_hits,
-                keyword_hits=keyword_hits,
-                rerank_top_k=self.settings.rerank_top_k,
-                answer_top_k=self.settings.answer_top_k,
-            )
-
             chunk_map = {chunk.id: chunk for chunk in self.store.all_chunks()}
-            evidence_chunks = [chunk_map[hit.chunk_id] for hit in trace.reranked_hits if hit.chunk_id in chunk_map]
-        answer = self.chat_model.answer(question, evidence_chunks, self.settings.refusal_text)
+        return self._run_query_with_context(
+            question=question,
+            actor=actor,
+            retrieval_engine=self.retrieval_engine,
+            chunk_map=chunk_map,
+            chat_model=self.chat_model,
+            verifier=self.verifier,
+            audit_action="query.run",
+        )
+
+    def run_benchmark(self, actor: str):
+        benchmark = load_benchmark(self.settings.benchmark_path)
+        benchmark_store = KnowledgeBaseStore()
+        for file_path in sorted(self.settings.benchmark_corpus_dir.glob("*")):
+            if not file_path.is_file():
+                continue
+            parsed = parse_document(file_path)
+            document = self._build_document_record(parsed, document_id=benchmark_store.create_document_id())
+            chunks = build_chunks(
+                document_id=document.id,
+                document_name=document.filename,
+                source_path=document.source_path,
+                pages=parsed.pages,
+                chunk_size=self.settings.chunk_size,
+                chunk_overlap=self.settings.chunk_overlap,
+            )
+            benchmark_store.save_document(document, chunks)
+
+        benchmark_engine = RetrievalEngine(HashedEmbeddingModel())
+        benchmark_engine.update(benchmark_store.all_chunks())
+        chunk_map = {chunk.id: chunk for chunk in benchmark_store.all_chunks()}
+        benchmark_chat_model = HeuristicChatModel()
+        benchmark_verifier = OverlapVerifier()
+        results = [
+            self._run_query_with_context(
+                question=sample.question,
+                actor=actor,
+                retrieval_engine=benchmark_engine,
+                chunk_map=chunk_map,
+                chat_model=benchmark_chat_model,
+                verifier=benchmark_verifier,
+                audit_action=None,
+            )
+            for sample in benchmark
+        ]
+        run = self.evaluation_runner.build_run(benchmark, results)
+        with self._lock:
+            self.evaluation_store.add(run)
+        self.audit_store.append(
+            actor=actor,
+            action="evaluation.run",
+            detail=f"Completed evaluation run {run.id} across {run.sample_count} benchmark samples.",
+        )
+        return run
+
+    def list_evaluations(self):
+        with self._lock:
+            return self.evaluation_store.list_runs()
+
+    def list_logs(self):
+        with self._lock:
+            return self.audit_store.list_entries()
+
+    def _run_query_with_context(
+        self,
+        question: str,
+        actor: str,
+        retrieval_engine: RetrievalEngine,
+        chunk_map: dict[str, object],
+        chat_model: ChatModel,
+        verifier: Verifier,
+        audit_action: str | None,
+    ) -> QueryResult:
+        dense_hits = retrieval_engine.dense_retrieve(question, self.settings.dense_top_k)
+        keyword_hits = retrieval_engine.keyword_retrieve(question, self.settings.bm25_top_k)
+        trace = retrieval_engine.fuse_and_rerank(
+            query=question,
+            dense_hits=dense_hits,
+            keyword_hits=keyword_hits,
+            rerank_top_k=self.settings.rerank_top_k,
+            answer_top_k=self.settings.answer_top_k,
+        )
+
+        evidence_chunks = [chunk_map[hit.chunk_id] for hit in trace.reranked_hits if hit.chunk_id in chunk_map]
+        answer = chat_model.answer(question, evidence_chunks, self.settings.refusal_text)
         if answer == self.settings.refusal_text:
-            verification = self.verifier.verify("", evidence_chunks)
+            verification = verifier.verify("", evidence_chunks)
             citations: list[Citation] = []
             support_score = 1.0
             unsupported_sentences: list[str] = []
         else:
-            verification = self.verifier.verify(answer, evidence_chunks)
+            verification = verifier.verify(answer, evidence_chunks)
             citations = [
                 Citation(
                     chunk_id=hit.chunk_id,
@@ -254,33 +334,13 @@ class RAGPipeline:
             unsupported_sentences=unsupported_sentences,
             retrieval_trace=trace,
         )
-        self.audit_store.append(actor=actor, action="query.run", detail=f"Question: {question}")
+        if audit_action:
+            self.audit_store.append(actor=actor, action=audit_action, detail=f"Question: {question}")
         return result
 
-    def run_benchmark(self, actor: str):
-        benchmark = load_benchmark(self.settings.benchmark_path)
-        results = [self.query(sample.question, actor=actor) for sample in benchmark]
-        run = self.evaluation_runner.build_run(benchmark, results)
-        with self._lock:
-            self.evaluation_store.add(run)
-        self.audit_store.append(
-            actor=actor,
-            action="evaluation.run",
-            detail=f"Completed evaluation run {run.id} across {run.sample_count} samples.",
-        )
-        return run
-
-    def list_evaluations(self):
-        with self._lock:
-            return self.evaluation_store.list_runs()
-
-    def list_logs(self):
-        with self._lock:
-            return self.audit_store.list_entries()
-
-    def _build_document_record(self, parsed: ParsedDocument) -> DocumentRecord:
+    def _build_document_record(self, parsed: ParsedDocument, document_id: str | None = None) -> DocumentRecord:
         return DocumentRecord(
-            id=self.store.create_document_id(),
+            id=document_id or self.store.create_document_id(),
             filename=parsed.filename,
             content_type=parsed.content_type,
             checksum=parsed.checksum,

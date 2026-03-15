@@ -144,7 +144,6 @@ export default function App() {
     <Shell
       activeView={activeView}
       onChangeView={setActiveView}
-      username="Demo Workspace"
     >
       {globalError ? <p className="error-banner">{globalError}</p> : null}
 

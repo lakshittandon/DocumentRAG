@@ -88,7 +88,14 @@ export interface HealthStatus {
   max_upload_size_mb: number;
 }
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000";
+const configuredApiBaseUrl = import.meta.env.VITE_API_BASE_URL?.trim() ?? "";
+const API_BASE_URL = configuredApiBaseUrl
+  ? configuredApiBaseUrl.startsWith("http")
+    ? configuredApiBaseUrl
+    : `https://${configuredApiBaseUrl}`
+  : window.location.port === "5173"
+    ? "http://localhost:8000"
+    : "";
 
 async function request<T>(
   path: string,

@@ -1,0 +1,36 @@
+services:
+  - type: web
+    name: reliable-rag-platform
+    runtime: docker
+    plan: free
+    dockerfilePath: ./deployment/backend.Dockerfile
+    dockerContext: .
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: JWT_SECRET
+        generateValue: true
+      - key: TOKEN_EXPIRY_MINUTES
+        value: "720"
+      - key: MODEL_PROVIDER
+        value: gemini
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: GEMINI_GENERATION_MODEL
+        value: gemini-2.5-flash-lite
+      - key: GEMINI_EMBEDDING_MODEL
+        value: gemini-embedding-001
+      - key: GEMINI_API_BASE_URL
+        value: https://generativelanguage.googleapis.com/v1beta
+      - key: GEMINI_TIMEOUT_SECONDS
+        value: "30"
+      - key: GEMINI_EMBEDDING_DIMENSIONS
+        value: "768"
+      - key: MAX_UPLOAD_SIZE_MB
+        value: "10"
+      - key: CORPUS_DIR
+        value: /app/data/corpus
+      - key: BENCHMARK_CORPUS_DIR
+        value: /app/data/benchmark_corpus
+      - key: BENCHMARK_PATH
+        value: /app/data/evaluations/demo_benchmark.json
