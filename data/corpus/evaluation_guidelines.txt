@@ -1,5 +1,0 @@
-Evaluation for document question answering should include retrieval metrics such as Recall at k, Mean Reciprocal Rank, and nDCG.
-Answer quality should measure correctness, citation correctness, refusal behavior on negative queries, and hallucination rate.
-A strong benchmark should contain single-hop questions, synthesis questions, and negative questions where the answer is not in the corpus.
-Error analysis is as important as aggregate metrics because it reveals missing metadata, poor chunk boundaries, or weak reranking.
-
