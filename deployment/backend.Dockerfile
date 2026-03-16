@@ -22,8 +22,9 @@ WORKDIR /app
 COPY backend/pyproject.toml /app/backend/pyproject.toml
 COPY backend/README.md /app/backend/README.md
 COPY backend/app /app/backend/app
-COPY data /app/data
 COPY --from=frontend-build /app/frontend/dist /app/frontend/dist
+
+RUN mkdir -p /app/data/uploads /app/data/corpus
 
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir /app/backend
