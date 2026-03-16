@@ -6,7 +6,6 @@ This repository contains a full-stack final year project scaffold for a reliable
 - React + TypeScript frontend
 - Hybrid retrieval with dense scoring, BM25, RRF, and reranking
 - Citation-aware answer generation and sentence-level verification
-- Evaluation harness with retrieval and answer quality metrics
 - Docker-based local deployment topology with PostgreSQL and Qdrant
 - Gemini-powered generation and embeddings through the Gemini API free tier
 
@@ -15,7 +14,6 @@ This repository contains a full-stack final year project scaffold for a reliable
 - `backend/` FastAPI application and core RAG pipeline
 - `frontend/` React application for login, corpus, query, evaluation, and logs
 - `data/corpus/` reproducible demo corpus used for first-run seeding
-- `data/evaluations/` benchmark inputs for automated evaluation runs
 - `docs/` project documentation, architecture notes, and deliverables
 - `deployment/` Dockerfiles and deployment assets
 - `scripts/` helper utilities such as project-plan docx export
@@ -61,7 +59,6 @@ The deployment image:
 - serves the frontend from the FastAPI app
 - exposes the backend and UI from one public URL
 - keeps the user corpus empty by default
-- runs Evaluation Lab against the fixed benchmark corpus only
 
 ## Default Demo Credentials
 
@@ -72,8 +69,8 @@ The deployment image:
 
 - Document upload, ingestion, chunking, indexing, query, logging, and evaluation routes
 - Provider-agnostic model interfaces with Gemini adapters and deterministic local fallback adapters
-- React demo screens for login, corpus management, querying, evaluations, and logs
-- Demo corpus and benchmark data for immediate local testing
+- React demo screens for corpus management, querying, and logs
+- Sample corpus and Gemini-ready configuration for immediate local testing
 - Project-plan source document and export script for `.docx`
 
 ## What You Can Extend Next

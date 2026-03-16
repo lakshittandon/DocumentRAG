@@ -79,20 +79,6 @@ class QueryResponse(BaseModel):
     retrieval_trace: QueryTraceResponse
 
 
-class EvaluationResponse(BaseModel):
-    id: str
-    created_at: str
-    sample_count: int
-    retrieval_recall_at_5: float
-    mrr: float
-    ndcg_at_5: float
-    answer_accuracy: float
-    citation_accuracy: float
-    refusal_accuracy: float
-    hallucination_rate: float
-    notes: str
-
-
 class AuditLogResponse(BaseModel):
     id: str
     actor: str
@@ -105,7 +91,6 @@ class HealthResponse(BaseModel):
     status: str
     version: str
     documents_indexed: int
-    benchmark_ready: bool
     model_provider: str
     generation_model: str
     embedding_model: str

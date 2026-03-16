@@ -1,6 +1,6 @@
 import type { PropsWithChildren } from "react";
 
-export type AppView = "dashboard" | "query" | "evaluations" | "logs";
+export type AppView = "dashboard" | "query" | "logs";
 
 interface ShellProps extends PropsWithChildren {
   activeView: AppView;
@@ -12,7 +12,6 @@ interface ShellProps extends PropsWithChildren {
 const VIEWS: Array<{ id: AppView; label: string }> = [
   { id: "dashboard", label: "Corpus" },
   { id: "query", label: "Query Studio" },
-  { id: "evaluations", label: "Evaluation Lab" },
   { id: "logs", label: "Audit Trail" },
 ];
 
@@ -23,7 +22,7 @@ export function Shell({ activeView, onChangeView, onLogout, username, children }
         <div className="brand-panel">
           <h1>Reliable RAG Platform</h1>
           <p className="brand-copy">
-            Hybrid retrieval, grounded answers, verification, and evaluation in one demo system.
+            Hybrid retrieval, grounded answers, and verification in one demo system.
           </p>
         </div>
 

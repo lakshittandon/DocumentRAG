@@ -123,33 +123,6 @@ class QueryResult:
 
 
 @dataclass(slots=True)
-class BenchmarkSample:
-    id: str
-    question: str
-    expected_document: str
-    expected_keywords: list[str]
-    negative: bool
-
-
-@dataclass(slots=True)
-class EvaluationRun:
-    id: str
-    created_at: str
-    sample_count: int
-    retrieval_recall_at_5: float
-    mrr: float
-    ndcg_at_5: float
-    answer_accuracy: float
-    citation_accuracy: float
-    refusal_accuracy: float
-    hallucination_rate: float
-    notes: str
-
-    def to_dict(self) -> dict[str, Any]:
-        return asdict(self)
-
-
-@dataclass(slots=True)
 class AuditLogEntry:
     id: str
     actor: str

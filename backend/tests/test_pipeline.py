@@ -8,7 +8,7 @@ import unittest
 from app.core.config import Settings
 from app.services.models import HashedEmbeddingModel, HeuristicChatModel, OverlapVerifier
 from app.services.pipeline import RAGPipeline
-from app.services.storage import AuditLogStore, EvaluationStore, KnowledgeBaseStore
+from app.services.storage import AuditLogStore, KnowledgeBaseStore
 
 
 class PipelineTests(unittest.TestCase):
@@ -16,41 +16,12 @@ class PipelineTests(unittest.TestCase):
         self.temp_dir = tempfile.TemporaryDirectory()
         root = Path(self.temp_dir.name)
         corpus_dir = root / "corpus"
-        benchmark_corpus_dir = root / "benchmark_corpus"
         uploads_dir = root / "uploads"
-        eval_dir = root / "evaluations"
         corpus_dir.mkdir()
-        benchmark_corpus_dir.mkdir()
         uploads_dir.mkdir()
-        eval_dir.mkdir()
 
         (corpus_dir / "doc1.txt").write_text(
             "Reliable answers should cite source passages and refuse unsupported claims.",
-            encoding="utf-8",
-        )
-        (benchmark_corpus_dir / "benchmark_doc.txt").write_text(
-            "Evaluation samples use a fixed benchmark corpus with citations, retrieval metrics, and refusal handling.",
-            encoding="utf-8",
-        )
-        (eval_dir / "benchmark.json").write_text(
-            """
-            [
-              {
-                "id": "sample-1",
-                "question": "What should reliable answers do?",
-                "expected_document": "benchmark_doc.txt",
-                "expected_keywords": ["citations", "refusal"],
-                "negative": false
-              },
-              {
-                "id": "sample-2",
-                "question": "Describe xenobiology protocols for Martian coral reefs.",
-                "expected_document": "",
-                "expected_keywords": [],
-                "negative": true
-              }
-            ]
-            """.strip(),
             encoding="utf-8",
         )
 
@@ -61,8 +32,6 @@ class PipelineTests(unittest.TestCase):
             access_token_expiry_minutes=60,
             upload_dir=uploads_dir,
             corpus_dir=corpus_dir,
-            benchmark_corpus_dir=benchmark_corpus_dir,
-            benchmark_path=eval_dir / "benchmark.json",
             dense_top_k=10,
             bm25_top_k=10,
             rerank_top_k=10,
@@ -75,7 +44,6 @@ class PipelineTests(unittest.TestCase):
             settings=self.settings,
             store=KnowledgeBaseStore(),
             audit_store=AuditLogStore(),
-            evaluation_store=EvaluationStore(),
             embedder=HashedEmbeddingModel(),
             chat_model=HeuristicChatModel(),
             verifier=OverlapVerifier(),
@@ -94,11 +62,6 @@ class PipelineTests(unittest.TestCase):
     def test_negative_query_uses_refusal(self) -> None:
         result = self.pipeline.query("What does the corpus say about orbital mechanics?", actor="tester")
         self.assertEqual(result.answer, self.settings.refusal_text)
-
-    def test_benchmark_run_returns_metrics(self) -> None:
-        run = self.pipeline.run_benchmark(actor="tester")
-        self.assertEqual(run.sample_count, 2)
-        self.assertGreaterEqual(run.refusal_accuracy, 0.5)
 
     def test_delete_document_removes_it_from_corpus(self) -> None:
         document = self.pipeline.list_documents()[0]

@@ -55,20 +55,6 @@ export interface QueryResponse {
   retrieval_trace: QueryTrace;
 }
 
-export interface EvaluationRun {
-  id: string;
-  created_at: string;
-  sample_count: number;
-  retrieval_recall_at_5: number;
-  mrr: number;
-  ndcg_at_5: number;
-  answer_accuracy: number;
-  citation_accuracy: number;
-  refusal_accuracy: number;
-  hallucination_rate: number;
-  notes: string;
-}
-
 export interface AuditLogEntry {
   id: string;
   actor: string;
@@ -81,7 +67,6 @@ export interface HealthStatus {
   status: string;
   version: string;
   documents_indexed: number;
-  benchmark_ready: boolean;
   model_provider: string;
   generation_model: string;
   embedding_model: string;
@@ -175,11 +160,6 @@ export const api = {
       },
       token,
     ),
-
-  runEvaluation: (token: string) =>
-    request<EvaluationRun>("/evaluations/run", { method: "POST" }, token),
-
-  listEvaluations: (token: string) => request<EvaluationRun[]>("/evaluations", {}, token),
 
   listLogs: (token: string) => request<AuditLogEntry[]>("/logs", {}, token),
 };

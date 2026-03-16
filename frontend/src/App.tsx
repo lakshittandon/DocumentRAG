@@ -6,12 +6,10 @@ import {
   api,
   type AuditLogEntry,
   type DocumentRecord,
-  type EvaluationRun,
   type HealthStatus,
   type QueryResponse,
 } from "./lib/api";
 import { DashboardPage } from "./pages/DashboardPage";
-import { EvaluationsPage } from "./pages/EvaluationsPage";
 import { LogsPage } from "./pages/LogsPage";
 import { LoginPage } from "./pages/LoginPage";
 import { QueryPage } from "./pages/QueryPage";
@@ -24,7 +22,6 @@ export default function App() {
   const [activeView, setActiveView] = useState<AppView>("dashboard");
   const [documents, setDocuments] = useState<DocumentRecord[]>([]);
   const [health, setHealth] = useState<HealthStatus | null>(null);
-  const [evaluations, setEvaluations] = useState<EvaluationRun[]>([]);
   const [logs, setLogs] = useState<AuditLogEntry[]>([]);
   const [queryResult, setQueryResult] = useState<QueryResponse | null>(null);
   const [globalError, setGlobalError] = useState("");
@@ -38,15 +35,13 @@ export default function App() {
 
     setGlobalError("");
     try {
-      const [healthResponse, documentsResponse, evaluationResponse, logResponse] = await Promise.all([
+      const [healthResponse, documentsResponse, logResponse] = await Promise.all([
         api.health(),
         api.listDocuments(auth.accessToken),
-        api.listEvaluations(auth.accessToken),
         api.listLogs(auth.accessToken),
       ]);
       setHealth(healthResponse);
       setDocuments(documentsResponse);
-      setEvaluations(evaluationResponse);
       setLogs(logResponse);
     } catch (caughtError) {
       setGlobalError(caughtError instanceof Error ? caughtError.message : "Failed to load the app.");
@@ -134,12 +129,6 @@ export default function App() {
     await loadAppData();
   };
 
-  const handleRunEvaluation = async () => {
-    const run = await api.runEvaluation(auth.accessToken);
-    setEvaluations((current) => [run, ...current.filter((item) => item.id !== run.id)]);
-    await loadAppData();
-  };
-
   return (
     <Shell
       activeView={activeView}
@@ -159,10 +148,6 @@ export default function App() {
 
       {activeView === "query" && (
         <QueryPage result={queryResult} onSubmitQuestion={handleQuery} />
-      )}
-
-      {activeView === "evaluations" && (
-        <EvaluationsPage runs={evaluations} onRunEvaluation={handleRunEvaluation} />
       )}
 
       {activeView === "logs" && <LogsPage logs={logs} />}

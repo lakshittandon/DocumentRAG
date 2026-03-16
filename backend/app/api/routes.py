@@ -13,7 +13,6 @@ from app.schemas.api import (
     AuditLogResponse,
     DeleteDocumentResponse,
     DocumentResponse,
-    EvaluationResponse,
     HealthResponse,
     LoginRequest,
     QueryRequest,
@@ -38,11 +37,6 @@ def _map_document(document) -> DocumentResponse:
 
 def _map_query(result) -> QueryResponse:
     return QueryResponse(**result.to_dict())
-
-
-def _map_evaluation(run) -> EvaluationResponse:
-    return EvaluationResponse(**run.to_dict())
-
 
 def _map_log(entry) -> AuditLogResponse:
     return AuditLogResponse(**entry.to_dict())
@@ -73,15 +67,10 @@ def login(payload: LoginRequest, app_container=Depends(get_container)) -> TokenR
 
 @router.get("/health", response_model=HealthResponse)
 def health(app_container=Depends(get_container)) -> HealthResponse:
-    benchmark_ready = (
-        app_container.settings.benchmark_path.exists()
-        and any(app_container.settings.benchmark_corpus_dir.glob("*"))
-    )
     return HealthResponse(
         status="ok",
         version=app_container.settings.app_version,
         documents_indexed=len(app_container.pipeline.list_documents()),
-        benchmark_ready=benchmark_ready,
         model_provider=app_container.settings.model_provider,
         generation_model=(
             app_container.settings.gemini_generation_model
@@ -181,23 +170,6 @@ def run_query(
 ) -> QueryResponse:
     result = app_container.pipeline.query(payload.question, actor=current_user.username)
     return _map_query(result)
-
-
-@router.post("/evaluations/run", response_model=EvaluationResponse)
-def run_evaluation(
-    current_user: UserAccount = Depends(get_current_user),
-    app_container=Depends(get_container),
-) -> EvaluationResponse:
-    run = app_container.pipeline.run_benchmark(actor=current_user.username)
-    return _map_evaluation(run)
-
-
-@router.get("/evaluations", response_model=list[EvaluationResponse])
-def list_evaluations(
-    current_user: UserAccount = Depends(get_current_user),
-    app_container=Depends(get_container),
-) -> list[EvaluationResponse]:
-    return [_map_evaluation(run) for run in app_container.pipeline.list_evaluations()]
 
 
 @router.get("/logs", response_model=list[AuditLogResponse])

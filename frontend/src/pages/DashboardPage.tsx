@@ -48,8 +48,8 @@ export function DashboardPage({ documents, health, onUpload, onReindex, onDelete
             <span>Documents Indexed</span>
           </article>
           <article className="stat-pill">
-            <strong>{health?.benchmark_ready ? "Ready" : "Missing"}</strong>
-            <span>Benchmark Status</span>
+            <strong>{health?.max_upload_size_mb ?? 10} MB</strong>
+            <span>Upload Limit</span>
           </article>
           <article className="stat-pill">
             <strong>{health?.version ?? "0.1.0"}</strong>

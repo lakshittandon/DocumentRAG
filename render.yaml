@@ -30,7 +30,3 @@ services:
         value: "10"
       - key: CORPUS_DIR
         value: /app/data/corpus
-      - key: BENCHMARK_CORPUS_DIR
-        value: /app/data/benchmark_corpus
-      - key: BENCHMARK_PATH
-        value: /app/data/evaluations/demo_benchmark.json

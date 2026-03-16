@@ -6,7 +6,7 @@ from typing import Iterable
 from uuid import uuid4
 
 from app.core.security import hash_password
-from app.domain.types import AuditLogEntry, DocumentRecord, EvaluationRun, UserAccount, utc_now_iso
+from app.domain.types import AuditLogEntry, DocumentRecord, UserAccount, utc_now_iso
 
 
 class UserStore:
@@ -78,19 +78,6 @@ class KnowledgeBaseStore:
 
     def create_document_id(self) -> str:
         return str(uuid4())
-
-
-class EvaluationStore:
-    def __init__(self) -> None:
-        self._runs: list[EvaluationRun] = []
-
-    def add(self, run: EvaluationRun) -> EvaluationRun:
-        self._runs.insert(0, run)
-        return run
-
-    def list_runs(self) -> list[EvaluationRun]:
-        return list(self._runs)
-
 
 class AuditLogStore:
     def __init__(self) -> None:

@@ -10,7 +10,7 @@ from app.services.models import (
     OverlapVerifier,
 )
 from app.services.pipeline import RAGPipeline
-from app.services.storage import AuditLogStore, EvaluationStore, KnowledgeBaseStore, UserStore
+from app.services.storage import AuditLogStore, KnowledgeBaseStore, UserStore
 
 
 class AppContainer:
@@ -19,7 +19,6 @@ class AppContainer:
         self.user_store = UserStore()
         self.knowledge_base = KnowledgeBaseStore()
         self.audit_store = AuditLogStore()
-        self.evaluation_store = EvaluationStore()
         self.auth_service = AuthService(
             user_store=self.user_store,
             audit_store=self.audit_store,
@@ -31,7 +30,6 @@ class AppContainer:
             settings=self.settings,
             store=self.knowledge_base,
             audit_store=self.audit_store,
-            evaluation_store=self.evaluation_store,
             embedder=embedder,
             chat_model=chat_model,
             verifier=verifier,

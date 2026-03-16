@@ -7,18 +7,10 @@ import threading
 from app.core.config import Settings
 from app.domain.types import Citation, DocumentRecord, QueryResult
 from app.services.chunking import build_chunks
-from app.services.evaluation import EvaluationRunner, load_benchmark
-from app.services.models import (
-    ChatModel,
-    EmbeddingModel,
-    HashedEmbeddingModel,
-    HeuristicChatModel,
-    OverlapVerifier,
-    Verifier,
-)
+from app.services.models import ChatModel, EmbeddingModel, Verifier
 from app.services.parsing import ParsedDocument, UnsupportedDocumentError, parse_document, sha256_file
 from app.services.retrieval import RetrievalEngine
-from app.services.storage import AuditLogStore, EvaluationStore, KnowledgeBaseStore
+from app.services.storage import AuditLogStore, KnowledgeBaseStore
 
 
 class RAGPipeline:
@@ -27,7 +19,6 @@ class RAGPipeline:
         settings: Settings,
         store: KnowledgeBaseStore,
         audit_store: AuditLogStore,
-        evaluation_store: EvaluationStore,
         embedder: EmbeddingModel,
         chat_model: ChatModel,
         verifier: Verifier,
@@ -35,11 +26,9 @@ class RAGPipeline:
         self.settings = settings
         self.store = store
         self.audit_store = audit_store
-        self.evaluation_store = evaluation_store
         self.chat_model = chat_model
         self.verifier = verifier
         self.retrieval_engine = RetrievalEngine(embedder)
-        self.evaluation_runner = EvaluationRunner(refusal_text=settings.refusal_text)
         self._lock = threading.RLock()
 
     def bootstrap(self) -> None:
@@ -229,55 +218,6 @@ class RAGPipeline:
             verifier=self.verifier,
             audit_action="query.run",
         )
-
-    def run_benchmark(self, actor: str):
-        benchmark = load_benchmark(self.settings.benchmark_path)
-        benchmark_store = KnowledgeBaseStore()
-        for file_path in sorted(self.settings.benchmark_corpus_dir.glob("*")):
-            if not file_path.is_file():
-                continue
-            parsed = parse_document(file_path)
-            document = self._build_document_record(parsed, document_id=benchmark_store.create_document_id())
-            chunks = build_chunks(
-                document_id=document.id,
-                document_name=document.filename,
-                source_path=document.source_path,
-                pages=parsed.pages,
-                chunk_size=self.settings.chunk_size,
-                chunk_overlap=self.settings.chunk_overlap,
-            )
-            benchmark_store.save_document(document, chunks)
-
-        benchmark_engine = RetrievalEngine(HashedEmbeddingModel())
-        benchmark_engine.update(benchmark_store.all_chunks())
-        chunk_map = {chunk.id: chunk for chunk in benchmark_store.all_chunks()}
-        benchmark_chat_model = HeuristicChatModel()
-        benchmark_verifier = OverlapVerifier()
-        results = [
-            self._run_query_with_context(
-                question=sample.question,
-                actor=actor,
-                retrieval_engine=benchmark_engine,
-                chunk_map=chunk_map,
-                chat_model=benchmark_chat_model,
-                verifier=benchmark_verifier,
-                audit_action=None,
-            )
-            for sample in benchmark
-        ]
-        run = self.evaluation_runner.build_run(benchmark, results)
-        with self._lock:
-            self.evaluation_store.add(run)
-        self.audit_store.append(
-            actor=actor,
-            action="evaluation.run",
-            detail=f"Completed evaluation run {run.id} across {run.sample_count} benchmark samples.",
-        )
-        return run
-
-    def list_evaluations(self):
-        with self._lock:
-            return self.evaluation_store.list_runs()
 
     def list_logs(self):
         with self._lock:

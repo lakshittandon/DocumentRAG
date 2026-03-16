@@ -1,1 +1,0 @@
-When evidence is insufficient, the system should refuse to answer rather than invent unsupported claims. A reliable RAG platform should refuse gracefully and clearly mark unsupported responses instead of hallucinating.
