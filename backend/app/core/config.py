@@ -46,7 +46,7 @@ def load_settings() -> Settings:
         app_name=os.getenv("APP_NAME", "Reliable RAG Document Intelligence Platform"),
         app_version=os.getenv("APP_VERSION", "0.1.0"),
         jwt_secret=os.getenv("JWT_SECRET", "change-me-before-production"),
-        access_token_expiry_minutes=int(os.getenv("TOKEN_EXPIRY_MINUTES", "720")),
+        access_token_expiry_minutes=int(os.getenv("TOKEN_EXPIRY_MINUTES", "10080")),
         upload_dir=upload_dir,
         corpus_dir=corpus_dir,
         dense_top_k=int(os.getenv("DENSE_TOP_K", "20")),

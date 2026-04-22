@@ -4,6 +4,7 @@ import { Shell, type AppView } from "./components/Shell";
 import { useAuth } from "./hooks/useAuth";
 import {
   api,
+  isAuthExpiredError,
   type AuditLogEntry,
   type DocumentRecord,
   type HealthStatus,
@@ -18,7 +19,7 @@ const DEMO_USERNAME = "admin";
 const DEMO_PASSWORD = "admin123";
 
 export default function App() {
-  const { auth, isReady, isAuthenticated, login } = useAuth();
+  const { auth, isReady, isAuthenticated, login, logout } = useAuth();
   const [activeView, setActiveView] = useState<AppView>("dashboard");
   const [documents, setDocuments] = useState<DocumentRecord[]>([]);
   const [health, setHealth] = useState<HealthStatus | null>(null);
@@ -44,6 +45,10 @@ export default function App() {
       setDocuments(documentsResponse);
       setLogs(logResponse);
     } catch (caughtError) {
+      if (isAuthExpiredError(caughtError)) {
+        logout();
+        return;
+      }
       setGlobalError(caughtError instanceof Error ? caughtError.message : "Failed to load the app.");
     }
   };

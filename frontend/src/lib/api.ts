@@ -73,6 +73,26 @@ export interface HealthStatus {
   max_upload_size_mb: number;
 }
 
+export class ApiError extends Error {
+  status: number;
+  detail: string;
+
+  constructor(status: number, detail: string) {
+    super(detail);
+    this.name = "ApiError";
+    this.status = status;
+    this.detail = detail;
+  }
+}
+
+export function isAuthExpiredError(error: unknown): boolean {
+  return (
+    error instanceof ApiError &&
+    error.status === 401 &&
+    error.detail.toLowerCase().includes("token has expired")
+  );
+}
+
 const configuredApiBaseUrl = import.meta.env.VITE_API_BASE_URL?.trim() ?? "";
 const API_BASE_URL = configuredApiBaseUrl
   ? configuredApiBaseUrl.startsWith("http")
@@ -102,12 +122,14 @@ async function request<T>(
 
   if (!response.ok) {
     const raw = await response.text();
+    let detail = raw || "Request failed.";
     try {
       const parsed = JSON.parse(raw) as { detail?: string };
-      throw new Error(parsed.detail || "Request failed.");
+      detail = parsed.detail || detail;
     } catch {
-      throw new Error(raw || "Request failed.");
+      // Keep the raw body when the response is not JSON.
     }
+    throw new ApiError(response.status, detail);
   }
 
   return response.json() as Promise<T>;
