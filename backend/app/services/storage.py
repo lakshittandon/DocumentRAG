@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections import OrderedDict
 from dataclasses import replace
-from typing import Iterable
+from typing import Any, Iterable
 from uuid import uuid4
 
 from app.core.security import hash_password
@@ -40,6 +40,19 @@ class KnowledgeBaseStore:
             if document.checksum == checksum:
                 return document
         return None
+
+    def get_documents_by_logical_name(self, logical_name: str) -> list[DocumentRecord]:
+        return [
+            document
+            for document in self._documents.values()
+            if document.logical_name == logical_name
+        ]
+
+    def get_latest_document_by_logical_name(self, logical_name: str) -> DocumentRecord | None:
+        versions = self.get_documents_by_logical_name(logical_name)
+        if not versions:
+            return None
+        return max(versions, key=lambda document: document.version)
 
     def save_document(self, document: DocumentRecord, chunks: list) -> DocumentRecord:
         stored = replace(document, chunk_count=len(chunks), updated_at=utc_now_iso())
@@ -83,8 +96,20 @@ class AuditLogStore:
     def __init__(self) -> None:
         self._entries: list[AuditLogEntry] = []
 
-    def append(self, actor: str, action: str, detail: str) -> AuditLogEntry:
-        entry = AuditLogEntry(id=str(uuid4()), actor=actor, action=action, detail=detail)
+    def append(
+        self,
+        actor: str,
+        action: str,
+        detail: str,
+        metadata: dict[str, Any] | None = None,
+    ) -> AuditLogEntry:
+        entry = AuditLogEntry(
+            id=str(uuid4()),
+            actor=actor,
+            action=action,
+            detail=detail,
+            metadata=metadata or {},
+        )
         self._entries.insert(0, entry)
         return entry
 

@@ -1,6 +1,6 @@
 import { useState, type ChangeEvent } from "react";
 
-import type { DocumentRecord, HealthStatus } from "../lib/api";
+import type { DocumentRecord, HealthStatus, VersionComparison } from "../lib/api";
 
 interface DashboardPageProps {
   documents: DocumentRecord[];
@@ -8,9 +8,21 @@ interface DashboardPageProps {
   onUpload: (file: File) => Promise<void>;
   onReindex: (documentId: string) => Promise<void>;
   onDelete: (document: DocumentRecord) => Promise<void>;
+  onUpdateVisibility: (document: DocumentRecord, visibility: "private" | "public") => Promise<void>;
+  onComparePreviousVersion: (document: DocumentRecord) => Promise<void>;
+  versionComparison: VersionComparison | null;
 }
 
-export function DashboardPage({ documents, health, onUpload, onReindex, onDelete }: DashboardPageProps) {
+export function DashboardPage({
+  documents,
+  health,
+  onUpload,
+  onReindex,
+  onDelete,
+  onUpdateVisibility,
+  onComparePreviousVersion,
+  versionComparison,
+}: DashboardPageProps) {
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState("");
 
@@ -97,6 +109,12 @@ export function DashboardPage({ documents, health, onUpload, onReindex, onDelete
                       ? "Indexing in background..."
                       : `${document.page_count} pages • ${document.chunk_count} chunks`}
                   </p>
+                  <p className="muted">
+                    {(document.logical_name ?? document.filename)} · v{document.version}
+                  </p>
+                  <p className="muted">
+                    Owner: {document.owner_username} · {document.visibility}
+                  </p>
                 </div>
                 <span className="status-chip">{document.status}</span>
               </div>
@@ -112,6 +130,37 @@ export function DashboardPage({ documents, health, onUpload, onReindex, onDelete
                 onClick={() => onReindex(document.id)}
               >
                 Reindex
+              </button>
+              {document.previous_version_id ? (
+                <button
+                  type="button"
+                  className="secondary-button"
+                  disabled={document.status === "processing"}
+                  onClick={() => {
+                    void onComparePreviousVersion(document).catch((caughtError) => {
+                      setError(
+                        caughtError instanceof Error ? caughtError.message : "Version comparison failed.",
+                      );
+                    });
+                  }}
+                >
+                  Compare Previous
+                </button>
+              ) : null}
+              <button
+                type="button"
+                className="secondary-button"
+                disabled={document.status === "processing"}
+                onClick={() => {
+                  const nextVisibility = document.visibility === "public" ? "private" : "public";
+                  void onUpdateVisibility(document, nextVisibility).catch((caughtError) => {
+                    setError(
+                      caughtError instanceof Error ? caughtError.message : "Permission update failed.",
+                    );
+                  });
+                }}
+              >
+                {document.visibility === "public" ? "Make Private" : "Make Public"}
               </button>
               <button
                 type="button"
@@ -136,6 +185,56 @@ export function DashboardPage({ documents, health, onUpload, onReindex, onDelete
           ))}
         </div>
       </section>
+
+      {versionComparison ? (
+        <section className="panel">
+          <div className="panel-header">
+            <h3>Version Comparison</h3>
+            <span className="panel-tag">
+              v{versionComparison.base_document.version} to v{versionComparison.target_document.version}
+            </span>
+          </div>
+          <p className="muted">{versionComparison.summary}</p>
+
+          <div className="comparison-grid">
+            <article>
+              <h4>Added Statements</h4>
+              <div className="stack">
+                {versionComparison.added.length === 0 ? (
+                  <p className="muted">No added statements detected.</p>
+                ) : (
+                  versionComparison.added.map((change) => (
+                    <div key={`${change.document_id}-${change.page}-${change.text}`} className="change-card added">
+                      <p>{change.text}</p>
+                      <small>
+                        {change.document_name} v{change.version}, page {change.page}, {change.section}
+                      </small>
+                    </div>
+                  ))
+                )}
+              </div>
+            </article>
+
+            <article>
+              <h4>Removed Statements</h4>
+              <div className="stack">
+                {versionComparison.removed.length === 0 ? (
+                  <p className="muted">No removed statements detected.</p>
+                ) : (
+                  versionComparison.removed.map((change) => (
+                    <div key={`${change.document_id}-${change.page}-${change.text}`} className="change-card removed">
+                      <p>{change.text}</p>
+                      <small>
+                        {change.document_name} v{change.version}, page {change.page}, {change.section}
+                      </small>
+                    </div>
+                  ))
+                )}
+              </div>
+            </article>
+          </div>
+        </section>
+      ) : null}
     </div>
   );
 }

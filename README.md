@@ -1,19 +1,23 @@
 # Reliable RAG Document Intelligence Platform
 
-This repository contains a full-stack final year project scaffold for a reliable Retrieval-Augmented Generation (RAG) system with:
+This repository contains a full-stack final year project for a reliable Retrieval-Augmented Generation (RAG) document intelligence system with:
 
 - FastAPI backend
 - React + TypeScript frontend
 - Hybrid retrieval with dense scoring, BM25, RRF, and reranking
 - Citation-aware answer generation and sentence-level verification
-- Docker-based local deployment topology with PostgreSQL and Qdrant
+- Document version metadata and previous-version comparison
+- Multi-document conflict analysis for policy-style documents
+- Prompt-injection guardrails and RAG-specific audit metadata
+- Evaluation dashboard for retrieval, citation, refusal, hallucination, and latency signals
+- Docker/Render deployment from one public service
 - Gemini-powered generation and embeddings through the Gemini API free tier
 
 ## Repository Layout
 
 - `backend/` FastAPI application and core RAG pipeline
-- `frontend/` React application for login, corpus, query, evaluation, and logs
-- `data/corpus/` reproducible demo corpus used for first-run seeding
+- `frontend/` React application for corpus, query, analysis, evaluation, and logs
+- `deliverables/sample_documents/` sample PDF/Markdown document for testing the demo
 - `docs/` project documentation, architecture notes, and deliverables
 - `deployment/` Dockerfiles and deployment assets
 - `scripts/` helper utilities such as project-plan docx export
@@ -67,15 +71,15 @@ The deployment image:
 
 ## What Is Already Implemented
 
-- Document upload, ingestion, chunking, indexing, query, logging, and evaluation routes
+- Document upload, async ingestion, chunking, indexing, query, logging, evaluation, version comparison, and conflict-analysis routes
 - Provider-agnostic model interfaces with Gemini adapters and deterministic local fallback adapters
-- React demo screens for corpus management, querying, and logs
-- Sample corpus and Gemini-ready configuration for immediate local testing
+- React demo screens for corpus management, querying, analysis, evaluation, and logs
+- Sample document and Gemini-ready configuration for immediate local testing
 - Project-plan source document and export script for `.docx`
 
 ## What You Can Extend Next
 
 - Replace in-memory repositories with persistent PostgreSQL-backed repositories
-- Add OCR for scanned PDFs
-- Add richer admin analytics and role policy enforcement
+- Add OCR for scanned PDFs; current PDF table extraction is text/table based through `pdfplumber`
+- Add richer admin analytics and full role policy management
 - Add batch embeddings and persistent vector storage for larger corpora

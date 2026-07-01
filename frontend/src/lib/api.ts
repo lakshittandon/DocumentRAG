@@ -14,6 +14,12 @@ export interface DocumentRecord {
   status: string;
   page_count: number;
   chunk_count: number;
+  logical_name?: string | null;
+  version: number;
+  parent_document_id?: string | null;
+  previous_version_id?: string | null;
+  owner_username: string;
+  visibility: string;
   error_message?: string | null;
   created_at: string;
   updated_at: string;
@@ -47,12 +53,26 @@ export interface QueryTrace {
   reranked_hits: RetrievalHit[];
 }
 
+export interface SentenceSupport {
+  sentence: string;
+  status: string;
+  best_overlap: number;
+  supporting_chunk_id?: string | null;
+  reason?: string | null;
+}
+
 export interface QueryResponse {
   answer: string;
   citations: Citation[];
   support_score: number;
   unsupported_sentences: string[];
   retrieval_trace: QueryTrace;
+  sentence_support: SentenceSupport[];
+  refused: boolean;
+  refusal_reason?: string | null;
+  guarded: boolean;
+  retrieved_documents: string[];
+  latency_ms: number;
 }
 
 export interface AuditLogEntry {
@@ -60,6 +80,77 @@ export interface AuditLogEntry {
   actor: string;
   action: string;
   detail: string;
+  metadata: Record<string, unknown>;
+  created_at: string;
+}
+
+export interface EvaluationSample {
+  category: string;
+  question: string;
+  expected_terms: string[];
+  expected_refusal: boolean;
+  answer: string;
+  passed: boolean;
+  refused: boolean;
+  recall_at_5: number;
+  reciprocal_rank: number;
+  citation_correct: boolean;
+  latency_ms: number;
+}
+
+export interface EvaluationRun {
+  id: string;
+  sample_count: number;
+  recall_at_5: number;
+  mrr: number;
+  answer_accuracy: number;
+  citation_correctness: number;
+  refusal_accuracy: number;
+  hallucination_rate: number;
+  avg_latency_ms: number;
+  estimated_model_calls: number;
+  notes: string;
+  samples: EvaluationSample[];
+  created_at: string;
+}
+
+export interface VersionChange {
+  change_type: string;
+  text: string;
+  document_id: string;
+  document_name: string;
+  version: number;
+  page: number;
+  section: string;
+}
+
+export interface VersionComparison {
+  base_document: DocumentRecord;
+  target_document: DocumentRecord;
+  added: VersionChange[];
+  removed: VersionChange[];
+  summary: string;
+}
+
+export interface ConflictFinding {
+  topic: string;
+  document_a: string;
+  document_a_id: string;
+  statement_a: string;
+  page_a: number;
+  document_b: string;
+  document_b_id: string;
+  statement_b: string;
+  page_b: number;
+  reason: string;
+}
+
+export interface ConflictAnalysis {
+  id: string;
+  document_count: number;
+  conflict_count: number;
+  findings: ConflictFinding[];
+  notes: string;
   created_at: string;
 }
 
@@ -173,6 +264,16 @@ export const api = {
       token,
     ),
 
+  updateDocumentPermissions: (documentId: string, visibility: "private" | "public", token: string) =>
+    request<DocumentRecord>(
+      `/documents/${documentId}/permissions`,
+      {
+        method: "PATCH",
+        body: JSON.stringify({ visibility }),
+      },
+      token,
+    ),
+
   query: (question: string, token: string) =>
     request<QueryResponse>(
       "/query",
@@ -184,4 +285,22 @@ export const api = {
     ),
 
   listLogs: (token: string) => request<AuditLogEntry[]>("/logs", {}, token),
+
+  runEvaluation: (token: string) =>
+    request<EvaluationRun>("/evaluations/run", { method: "POST" }, token),
+
+  listEvaluations: (token: string) => request<EvaluationRun[]>("/evaluations", {}, token),
+
+  listDocumentVersions: (documentId: string, token: string) =>
+    request<DocumentRecord[]>(`/documents/${documentId}/versions`, {}, token),
+
+  compareDocumentVersions: (baseDocumentId: string, targetDocumentId: string, token: string) =>
+    request<VersionComparison>(
+      `/documents/${baseDocumentId}/compare/${targetDocumentId}`,
+      { method: "POST" },
+      token,
+    ),
+
+  analyzeConflicts: (token: string) =>
+    request<ConflictAnalysis>("/analysis/conflicts", { method: "POST" }, token),
 };

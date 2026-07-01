@@ -8,7 +8,7 @@ import re
 from urllib import error, request
 from typing import Protocol
 
-from app.domain.types import ChunkRecord, VerificationResult
+from app.domain.types import ChunkRecord, SentenceSupport, VerificationResult
 from app.services.text_utils import tokenize, tokenize_with_ngrams
 
 
@@ -265,14 +265,46 @@ class OverlapVerifier:
             return VerificationResult(support_score=0.0, unsupported_sentences=[])
 
         evidence_terms = [set(tokenize(chunk.text)) for chunk in evidence]
-        unsupported: list[str] = []
+        sentence_support: list[SentenceSupport] = []
 
         for sentence in sentences:
             sentence_terms = set(tokenize(sentence))
-            supported = any(len(sentence_terms & chunk_terms) >= self.minimum_overlap for chunk_terms in evidence_terms)
-            if not supported:
-                unsupported.append(sentence)
+            best_overlap = 0
+            supporting_chunk_id: str | None = None
+            for index, chunk_terms in enumerate(evidence_terms):
+                overlap = len(sentence_terms & chunk_terms)
+                if overlap > best_overlap:
+                    best_overlap = overlap
+                    supporting_chunk_id = evidence[index].id
 
-        supported_count = len(sentences) - len(unsupported)
-        score = supported_count / len(sentences)
-        return VerificationResult(support_score=round(score, 3), unsupported_sentences=unsupported)
+            if best_overlap >= self.minimum_overlap:
+                status = "supported"
+                reason = "Sentence shares enough terms with retrieved evidence."
+            elif best_overlap > 0:
+                status = "partially_supported"
+                reason = "Sentence has weak overlap with evidence and should be reviewed."
+            else:
+                status = "unsupported"
+                reason = "No retrieved citation supports this claim."
+
+            sentence_support.append(
+                SentenceSupport(
+                    sentence=sentence,
+                    status=status,
+                    best_overlap=best_overlap,
+                    supporting_chunk_id=supporting_chunk_id,
+                    reason=reason,
+                )
+            )
+
+        unsupported = [item.sentence for item in sentence_support if item.status == "unsupported"]
+        weighted_support = sum(
+            1.0 if item.status == "supported" else 0.5 if item.status == "partially_supported" else 0.0
+            for item in sentence_support
+        )
+        score = weighted_support / len(sentences)
+        return VerificationResult(
+            support_score=round(score, 3),
+            unsupported_sentences=unsupported,
+            sentence_support=sentence_support,
+        )

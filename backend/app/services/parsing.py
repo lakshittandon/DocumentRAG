@@ -52,6 +52,11 @@ def _parse_text_file(path: Path) -> ParsedDocument:
 
 def _parse_pdf_file(path: Path) -> ParsedDocument:
     try:
+        return _parse_pdf_with_pdfplumber(path)
+    except ImportError:
+        pass
+
+    try:
         from pypdf import PdfReader
     except ImportError as exc:
         raise UnsupportedDocumentError("PDF support requires the pypdf dependency.") from exc
@@ -85,6 +90,55 @@ def _parse_pdf_file(path: Path) -> ParsedDocument:
     )
 
 
+def _parse_pdf_with_pdfplumber(path: Path) -> ParsedDocument:
+    import pdfplumber
+
+    pages: list[ParsedPage] = []
+    with pdfplumber.open(str(path)) as pdf:
+        for index, page in enumerate(pdf.pages, start=1):
+            extracted = (page.extract_text() or "").strip()
+            table_blocks: list[str] = []
+            for table_index, table in enumerate(page.extract_tables() or [], start=1):
+                flattened = _flatten_table(table)
+                if flattened:
+                    table_blocks.append(f"TABLE {table_index}: {flattened}")
+
+            combined = "\n".join(part for part in [extracted, *table_blocks] if part).strip()
+            if not combined:
+                continue
+            normalized = " ".join(combined.replace("\t", " ").split())
+            pages.append(
+                ParsedPage(
+                    page_number=index,
+                    text=normalized,
+                    section=infer_section(combined, f"Page {index}"),
+                )
+            )
+
+    if not pages:
+        raise UnsupportedDocumentError(
+            "Scanned or image-only PDFs are not supported in v1 because no text could be extracted."
+        )
+
+    return ParsedDocument(
+        filename=path.name,
+        content_type="application/pdf",
+        checksum=sha256_file(path),
+        source_path=str(path),
+        pages=pages,
+    )
+
+
+def _flatten_table(table: list[list[str | None]]) -> str:
+    rows: list[str] = []
+    for row in table:
+        cells = [" ".join((cell or "").split()) for cell in row]
+        cells = [cell for cell in cells if cell]
+        if cells:
+            rows.append(" | ".join(cells))
+    return " ; ".join(rows)
+
+
 def parse_document(path: Path) -> ParsedDocument:
     suffix = path.suffix.lower()
     if suffix in TEXT_CONTENT_TYPES:
@@ -92,4 +146,3 @@ def parse_document(path: Path) -> ParsedDocument:
     if suffix == ".pdf":
         return _parse_pdf_file(path)
     raise UnsupportedDocumentError(f"Unsupported file type: {suffix or 'unknown'}")
-

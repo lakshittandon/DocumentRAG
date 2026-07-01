@@ -1,6 +1,6 @@
 import type { PropsWithChildren } from "react";
 
-export type AppView = "dashboard" | "query" | "logs";
+export type AppView = "dashboard" | "query" | "analysis" | "evaluation" | "logs";
 
 interface ShellProps extends PropsWithChildren {
   activeView: AppView;
@@ -12,6 +12,8 @@ interface ShellProps extends PropsWithChildren {
 const VIEWS: Array<{ id: AppView; label: string }> = [
   { id: "dashboard", label: "Corpus" },
   { id: "query", label: "Query Studio" },
+  { id: "analysis", label: "Analysis Lab" },
+  { id: "evaluation", label: "Evaluation Lab" },
   { id: "logs", label: "Audit Trail" },
 ];
 

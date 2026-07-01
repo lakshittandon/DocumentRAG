@@ -14,7 +14,7 @@ app/schemas/api.py
 app/services/__init__.py
 app/services/auth.py
 app/services/chunking.py
-app/services/evaluation.py
+app/services/guardrails.py
 app/services/models.py
 app/services/parsing.py
 app/services/pipeline.py

@@ -11,14 +11,18 @@ from app.core.container import container
 from app.domain.types import UserAccount
 from app.schemas.api import (
     AuditLogResponse,
+    ConflictAnalysisResponse,
     DeleteDocumentResponse,
     DocumentResponse,
+    EvaluationRunResponse,
     HealthResponse,
     LoginRequest,
     QueryRequest,
     QueryResponse,
     ReindexResponse,
     TokenResponse,
+    UpdateDocumentPermissionsRequest,
+    VersionComparisonResponse,
 )
 from app.services.parsing import UnsupportedDocumentError
 
@@ -40,6 +44,18 @@ def _map_query(result) -> QueryResponse:
 
 def _map_log(entry) -> AuditLogResponse:
     return AuditLogResponse(**entry.to_dict())
+
+
+def _map_evaluation(run) -> EvaluationRunResponse:
+    return EvaluationRunResponse(**run.to_dict())
+
+
+def _map_version_comparison(comparison) -> VersionComparisonResponse:
+    return VersionComparisonResponse(**comparison.to_dict())
+
+
+def _map_conflict_analysis(analysis) -> ConflictAnalysisResponse:
+    return ConflictAnalysisResponse(**analysis.to_dict())
 
 
 def get_current_user(
@@ -91,7 +107,13 @@ def list_documents(
     current_user: UserAccount = Depends(get_current_user),
     app_container=Depends(get_container),
 ) -> list[DocumentResponse]:
-    return [_map_document(document) for document in app_container.pipeline.list_documents()]
+    return [
+        _map_document(document)
+        for document in app_container.pipeline.list_documents(
+            actor=current_user.username,
+            role=current_user.role,
+        )
+    ]
 
 
 @router.post("/documents/upload", response_model=DocumentResponse, status_code=status.HTTP_202_ACCEPTED)
@@ -162,13 +184,72 @@ def delete_document(
     )
 
 
+@router.patch("/documents/{document_id}/permissions", response_model=DocumentResponse)
+def update_document_permissions(
+    document_id: str,
+    payload: UpdateDocumentPermissionsRequest,
+    current_user: UserAccount = Depends(get_current_user),
+    app_container=Depends(get_container),
+) -> DocumentResponse:
+    try:
+        document = app_container.pipeline.update_document_permissions(
+            document_id=document_id,
+            actor=current_user.username,
+            role=current_user.role,
+            visibility=payload.visibility,
+        )
+    except PermissionError as exc:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+    return _map_document(document)
+
+
+@router.get("/documents/{document_id}/versions", response_model=list[DocumentResponse])
+def list_document_versions(
+    document_id: str,
+    current_user: UserAccount = Depends(get_current_user),
+    app_container=Depends(get_container),
+) -> list[DocumentResponse]:
+    try:
+        versions = app_container.pipeline.list_document_versions(document_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+    return [_map_document(document) for document in versions]
+
+
+@router.post(
+    "/documents/{base_document_id}/compare/{target_document_id}",
+    response_model=VersionComparisonResponse,
+)
+def compare_document_versions(
+    base_document_id: str,
+    target_document_id: str,
+    current_user: UserAccount = Depends(get_current_user),
+    app_container=Depends(get_container),
+) -> VersionComparisonResponse:
+    try:
+        comparison = app_container.pipeline.compare_document_versions(
+            base_document_id=base_document_id,
+            target_document_id=target_document_id,
+            actor=current_user.username,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+    return _map_version_comparison(comparison)
+
+
 @router.post("/query", response_model=QueryResponse)
 def run_query(
     payload: QueryRequest,
     current_user: UserAccount = Depends(get_current_user),
     app_container=Depends(get_container),
 ) -> QueryResponse:
-    result = app_container.pipeline.query(payload.question, actor=current_user.username)
+    result = app_container.pipeline.query(
+        payload.question,
+        actor=current_user.username,
+        role=current_user.role,
+    )
     return _map_query(result)
 
 
@@ -180,3 +261,31 @@ def list_logs(
     if current_user.role != "admin":
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin access required.")
     return [_map_log(entry) for entry in app_container.pipeline.list_logs()]
+
+
+@router.post("/evaluations/run", response_model=EvaluationRunResponse)
+def run_evaluation(
+    current_user: UserAccount = Depends(get_current_user),
+    app_container=Depends(get_container),
+) -> EvaluationRunResponse:
+    run = app_container.pipeline.run_evaluation(actor=current_user.username)
+    return _map_evaluation(run)
+
+
+@router.get("/evaluations", response_model=list[EvaluationRunResponse])
+def list_evaluations(
+    current_user: UserAccount = Depends(get_current_user),
+    app_container=Depends(get_container),
+) -> list[EvaluationRunResponse]:
+    if current_user.role != "admin":
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin access required.")
+    return [_map_evaluation(run) for run in app_container.pipeline.list_evaluation_runs()]
+
+
+@router.post("/analysis/conflicts", response_model=ConflictAnalysisResponse)
+def analyze_conflicts(
+    current_user: UserAccount = Depends(get_current_user),
+    app_container=Depends(get_container),
+) -> ConflictAnalysisResponse:
+    analysis = app_container.pipeline.analyze_conflicts(actor=current_user.username)
+    return _map_conflict_analysis(analysis)

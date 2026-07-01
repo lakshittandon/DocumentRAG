@@ -5,6 +5,23 @@ interface LogsPageProps {
 }
 
 export function LogsPage({ logs }: LogsPageProps) {
+  const renderMetadata = (metadata: AuditLogEntry["metadata"]) => {
+    const entries = Object.entries(metadata ?? {});
+    if (entries.length === 0) {
+      return null;
+    }
+
+    return (
+      <div className="metadata-grid">
+        {entries.map(([key, value]) => (
+          <span key={key}>
+            <strong>{key}:</strong> {Array.isArray(value) ? value.join(", ") : String(value)}
+          </span>
+        ))}
+      </div>
+    );
+  };
+
   return (
     <div className="stack">
       <section className="hero-card">
@@ -12,7 +29,7 @@ export function LogsPage({ logs }: LogsPageProps) {
           <p className="eyebrow">Audit Trail</p>
           <h2>Inspect user actions and system activity</h2>
           <p>
-            Use this view during the demo to show login, ingestion, query, reindex, and evaluation events captured by the backend.
+            Use this view during the demo to show login, ingestion, query, version comparison, conflict analysis, evaluation, and security events captured by the backend.
           </p>
         </div>
       </section>
@@ -35,7 +52,10 @@ export function LogsPage({ logs }: LogsPageProps) {
               <span>{new Date(entry.created_at).toLocaleString()}</span>
               <span>{entry.actor}</span>
               <span>{entry.action}</span>
-              <span>{entry.detail}</span>
+              <span>
+                {entry.detail}
+                {renderMetadata(entry.metadata)}
+              </span>
             </div>
           ))}
         </div>
@@ -43,4 +63,3 @@ export function LogsPage({ logs }: LogsPageProps) {
     </div>
   );
 }
-

@@ -1,6 +1,6 @@
 # Backend
 
-The backend exposes a FastAPI service for authentication, document ingestion, query handling, benchmark evaluation, and audit logging.
+The backend exposes a FastAPI service for authentication, document ingestion, query handling, version comparison, conflict analysis, benchmark evaluation, and audit logging.
 
 ## Local Development
 
@@ -15,4 +15,5 @@ uvicorn app.main:app --reload
 
 - The current implementation supports `MODEL_PROVIDER=gemini` using the Gemini REST API and `MODEL_PROVIDER=local` as an offline fallback.
 - Set `GEMINI_API_KEY` and keep `GEMINI_GENERATION_MODEL=gemini-2.5-flash-lite` plus `GEMINI_EMBEDDING_MODEL=gemini-embedding-001` to use the hosted Gemini path.
-- The application still uses in-memory repositories; PostgreSQL and Qdrant are part of the target architecture but are not yet wired into persistence.
+- The application still uses in-memory repositories and in-process retrieval indexes. PostgreSQL, Qdrant, and full role management are target architecture upgrades for larger deployments.
+- Text PDFs and simple PDF tables are supported; scanned/image-only PDFs are still rejected until OCR is added.

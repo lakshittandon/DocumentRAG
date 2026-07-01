@@ -1,0 +1,465 @@
+%PDF-1.4
+%‚„œ”
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [5 0 R 7 0 R 9 0 R 11 0 R 13 0 R 15 0 R] /Count 6 >>
+endobj
+3 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+4 0 obj
+<< /Length 1893 >>
+stream
+BT
+/F1 11 Tf
+54 760 Td
+14 TL
+(RELIABLE RAG PLATFORM DEMO HANDBOOK) Tj
+T*
+T*
+T*
+(Document Purpose) Tj
+T*
+T*
+T*
+(This handbook is a sample document created for testing the Reliable RAG Platform. It) Tj
+T*
+(contains clear facts, dates, module names, constraints, and project decisions so that) Tj
+T*
+(retrieval, citation generation, and refusal behaviour can be demonstrated during a final) Tj
+T*
+(year project presentation.) Tj
+T*
+T*
+T*
+(The document describes a fictional deployment of the Reliable RAG Platform for an) Tj
+T*
+(academic document intelligence use case. It is not an official policy document. It is) Tj
+T*
+(designed only for local testing and public demo purposes.) Tj
+T*
+T*
+T*
+(Project Overview) Tj
+T*
+T*
+T*
+(The Reliable RAG Platform is a web application that helps users ask questions over) Tj
+T*
+(uploaded documents. The system combines a FastAPI backend, a React TypeScript frontend,) Tj
+T*
+(document parsing, chunking, retrieval, Gemini-based answer generation, citation display,) Tj
+T*
+(and audit logging.) Tj
+T*
+T*
+T*
+(The main goal is to reduce hallucination by forcing the answer generator to use only) Tj
+T*
+(retrieved evidence from the uploaded corpus. If the platform cannot find enough) Tj
+T*
+(supporting evidence, the system should reply with the exact refusal sentence: "Not found) Tj
+T*
+(in the provided documents.") Tj
+T*
+T*
+T*
+(The application was built as an additional final year project by Lakshit Tandon,) Tj
+T*
+(registration number 220905506, under the internal guidance of Manjula K. Shenoy.) Tj
+T*
+T*
+T*
+(Supported File Types) Tj
+T*
+T*
+T*
+(Version 1 of the platform supports PDF, TXT, and Markdown files. The maximum file size) Tj
+T*
+(for upload is 10 MB. Files larger than this should be rejected before indexing to) Tj
+T*
+(prevent slow uploads and poor demo performance.) Tj
+ET
+BT
+/F1 9 Tf
+54 34 Td
+(Reliable RAG Platform Demo Handbook - Page 1) Tj
+ET
+endstream
+endobj
+5 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R >> >> /Contents 4 0 R >>
+endobj
+6 0 obj
+<< /Length 1995 >>
+stream
+BT
+/F1 11 Tf
+54 760 Td
+14 TL
+T*
+T*
+(The system supports text-based PDFs. Scanned PDFs and image-only documents are not) Tj
+T*
+(supported in version 1 because they require OCR. OCR support is planned as future work.) Tj
+T*
+T*
+T*
+(Ingestion Pipeline) Tj
+T*
+T*
+T*
+(When a user uploads a document, the backend stores the file, calculates a SHA-256) Tj
+T*
+(checksum, checks for duplicate content, extracts text, splits the text into chunks, and) Tj
+T*
+(attaches metadata to every chunk.) Tj
+T*
+T*
+T*
+(Each chunk stores the document name, document id, page number, section title, chunk) Tj
+T*
+(text, token count, and source path. This metadata is important because the frontend uses) Tj
+T*
+(it to show citations and source information.) Tj
+T*
+T*
+T*
+(Upload processing runs asynchronously. This means the user can upload a file and the) Tj
+T*
+(backend can index it in the background while the frontend shows the document status as) Tj
+T*
+(processing, indexed, or failed.) Tj
+T*
+T*
+T*
+(Retrieval Pipeline) Tj
+T*
+T*
+T*
+(The query pipeline receives a user question and searches the indexed chunks. The) Tj
+T*
+(prototype uses lexical retrieval and embedding-style scoring concepts to identify) Tj
+T*
+(relevant text. The original project plan included Qdrant for dense vectors and Whoosh) Tj
+T*
+(for BM25 keyword retrieval.) Tj
+T*
+T*
+T*
+(The intended production retrieval flow is hybrid retrieval. First, dense retrieval finds) Tj
+T*
+(semantically similar chunks. Second, BM25 finds keyword-matching chunks. Third,) Tj
+T*
+(Reciprocal Rank Fusion combines both ranked lists. Fourth, a reranking step selects the) Tj
+T*
+(strongest evidence chunks. Finally, only the top evidence chunks are passed to the) Tj
+T*
+(answer generator.) Tj
+T*
+T*
+T*
+(The answer generator must not answer from memory. It should answer only from retrieved) Tj
+T*
+(chunks. This design makes the system more trustworthy than a plain chatbot because every) Tj
+ET
+BT
+/F1 9 Tf
+54 34 Td
+(Reliable RAG Platform Demo Handbook - Page 2) Tj
+ET
+endstream
+endobj
+7 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R >> >> /Contents 6 0 R >>
+endobj
+8 0 obj
+<< /Length 1750 >>
+stream
+BT
+/F1 11 Tf
+54 760 Td
+14 TL
+(answer can be traced back to document evidence.) Tj
+T*
+T*
+T*
+(Answer Generation Rules) Tj
+T*
+T*
+T*
+(The assistant should provide direct answers when evidence is present in the uploaded) Tj
+T*
+(documents. Every factual answer should include citations. A citation should mention the) Tj
+T*
+(document name, page number, and section when available.) Tj
+T*
+T*
+T*
+(If retrieved evidence is weak, unrelated, or missing, the assistant should refuse) Tj
+T*
+(instead of guessing. The required refusal message is: "Not found in the provided) Tj
+T*
+(documents.") Tj
+T*
+T*
+T*
+(The platform should not invent missing values. For example, if the documents do not) Tj
+T*
+(mention a project budget, project marks, production users, or cloud database) Tj
+T*
+(credentials, the assistant should not create those details.) Tj
+T*
+T*
+T*
+(Frontend Modules) Tj
+T*
+T*
+T*
+(The frontend contains a corpus dashboard, a query studio, and an audit trail screen. The) Tj
+T*
+(corpus dashboard is used for uploading, viewing, and deleting documents. The query) Tj
+T*
+(studio is used for asking questions and viewing citations. The audit trail is used to) Tj
+T*
+(show important system events such as uploads, deletions, and queries.) Tj
+T*
+T*
+T*
+(The login screen is currently simplified for demo use. Full registration, role-based) Tj
+T*
+(authentication, and profile management are planned as future work.) Tj
+T*
+T*
+T*
+(The document preview and metadata panel are also planned as future work. This feature) Tj
+T*
+(would allow users to open a document, inspect extracted sections, and verify which) Tj
+T*
+(chunks were used for an answer.) Tj
+T*
+T*
+T*
+(Backend Modules) Tj
+T*
+T*
+ET
+BT
+/F1 9 Tf
+54 34 Td
+(Reliable RAG Platform Demo Handbook - Page 3) Tj
+ET
+endstream
+endobj
+9 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R >> >> /Contents 8 0 R >>
+endobj
+10 0 obj
+<< /Length 1873 >>
+stream
+BT
+/F1 11 Tf
+54 760 Td
+14 TL
+(The backend is implemented as a modular monolith. The main modules are API routes,) Tj
+T*
+(schemas, domain types, storage service, parsing service, chunking service, retrieval) Tj
+T*
+(service, model service, security helpers, and configuration.) Tj
+T*
+T*
+T*
+(FastAPI is used because it provides clean REST APIs, automatic validation through) Tj
+T*
+(Pydantic models, interactive API documentation, and good support for asynchronous) Tj
+T*
+(request handling.) Tj
+T*
+T*
+T*
+(The backend currently uses in-memory storage for the demo. A persistent PostgreSQL) Tj
+T*
+(database and durable file storage layer are planned as future work so that uploaded) Tj
+T*
+(documents and audit logs survive server restarts.) Tj
+T*
+T*
+T*
+(Model Integration) Tj
+T*
+T*
+T*
+(The project includes a provider-aware model layer. Gemini 2.5 Flash Lite is used for) Tj
+T*
+(answer generation in the deployed prototype because it has a free-tier option and is) Tj
+T*
+(suitable for lightweight demonstrations.) Tj
+T*
+T*
+T*
+(The system is designed so that the model provider can be changed later without rewriting) Tj
+T*
+(the entire application. In the future, OpenAI, Gemini, or local models could be plugged) Tj
+T*
+(into the same query pipeline.) Tj
+T*
+T*
+T*
+(Deployment Notes) Tj
+T*
+T*
+T*
+(The application is deployed on Render at the public URL https://reliable-rag-) Tj
+T*
+(platform.onrender.com. The deployment uses Docker so that backend and frontend assets) Tj
+T*
+(can be built in a repeatable way.) Tj
+T*
+T*
+T*
+(For a final year demo, the recommended steps are to upload this handbook, wait for) Tj
+T*
+(indexing to complete, ask two or three factual questions, inspect citations, ask one) Tj
+T*
+(negative question, and then show the audit trail.) Tj
+T*
+T*
+T*
+(Recommended Demo Questions) Tj
+ET
+BT
+/F1 9 Tf
+54 34 Td
+(Reliable RAG Platform Demo Handbook - Page 4) Tj
+ET
+endstream
+endobj
+11 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R >> >> /Contents 10 0 R >>
+endobj
+12 0 obj
+<< /Length 1401 >>
+stream
+BT
+/F1 11 Tf
+54 760 Td
+14 TL
+T*
+T*
+(What file types are supported in version 1?) Tj
+T*
+T*
+T*
+(What is the maximum upload size?) Tj
+T*
+T*
+T*
+(Why does the system refuse some questions?) Tj
+T*
+T*
+T*
+(Which frontend modules are currently available?) Tj
+T*
+T*
+T*
+(Who is the internal guide for the project?) Tj
+T*
+T*
+T*
+(Does version 1 support OCR for scanned PDFs?) Tj
+T*
+T*
+T*
+(What database is planned for persistent storage?) Tj
+T*
+T*
+T*
+(Known Limitations) Tj
+T*
+T*
+T*
+(The current prototype does not include OCR, full registration, enterprise SSO, multi-) Tj
+T*
+(tenant user isolation, or a production-grade database. These limitations are intentional) Tj
+T*
+(because the project is scoped as a solo-student final year additional project.) Tj
+T*
+T*
+T*
+(The current evaluation benchmark module was removed from the user-facing demo to avoid) Tj
+T*
+(misleading fixed benchmark scores. Instead, the project focuses on live document upload,) Tj
+T*
+(retrieval, citations, grounded answering, and auditability.) Tj
+T*
+T*
+T*
+(Future Enhancements) Tj
+T*
+T*
+T*
+(The planned future work includes OCR for scanned PDFs, PostgreSQL persistence, document) Tj
+T*
+(preview, metadata inspection, admin analytics, query history, improved role-based access) Tj
+T*
+(control, larger corpus testing, and more advanced retrieval evaluation.) Tj
+ET
+BT
+/F1 9 Tf
+54 34 Td
+(Reliable RAG Platform Demo Handbook - Page 5) Tj
+ET
+endstream
+endobj
+13 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R >> >> /Contents 12 0 R >>
+endobj
+14 0 obj
+<< /Length 278 >>
+stream
+BT
+/F1 11 Tf
+54 760 Td
+14 TL
+T*
+T*
+(The most important future improvement is persistent storage because it would make the) Tj
+T*
+(application more reliable after redeployment or server restart.) Tj
+T*
+ET
+BT
+/F1 9 Tf
+54 34 Td
+(Reliable RAG Platform Demo Handbook - Page 6) Tj
+ET
+endstream
+endobj
+15 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R >> >> /Contents 14 0 R >>
+endobj
+xref
+0 16
+0000000000 65535 f 
+0000000015 00000 n 
+0000000064 00000 n 
+0000000154 00000 n 
+0000000224 00000 n 
+0000002168 00000 n 
+0000002294 00000 n 
+0000004340 00000 n 
+0000004466 00000 n 
+0000006267 00000 n 
+0000006393 00000 n 
+0000008318 00000 n 
+0000008446 00000 n 
+0000009899 00000 n 
+0000010027 00000 n 
+0000010356 00000 n 
+trailer
+<< /Size 16 /Root 1 0 R >>
+startxref
+10484
+%%EOF

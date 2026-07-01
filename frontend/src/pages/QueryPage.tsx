@@ -8,6 +8,12 @@ interface QueryPageProps {
   onSubmitQuestion: (question: string) => Promise<void>;
 }
 
+const SUPPORT_LABELS: Record<string, string> = {
+  supported: "Supported",
+  partially_supported: "Partially supported",
+  unsupported: "Unsupported",
+};
+
 export function QueryPage({ result, onSubmitQuestion }: QueryPageProps) {
   const [question, setQuestion] = useState("Which metrics are used to evaluate retrieval quality?");
   const [isLoading, setIsLoading] = useState(false);
@@ -63,9 +69,24 @@ export function QueryPage({ result, onSubmitQuestion }: QueryPageProps) {
           <section className="panel">
             <div className="panel-header">
               <h3>Generated Answer</h3>
-              <span className="panel-tag">Support {result.support_score.toFixed(3)}</span>
+              <span className="panel-tag">Support {(result.support_score * 100).toFixed(0)}%</span>
+            </div>
+            <div className="trust-strip">
+              <span className={result.refused ? "status-chip danger-chip" : "status-chip success-chip"}>
+                {result.refused ? "Refused" : "Answered"}
+              </span>
+              {result.guarded ? <span className="status-chip danger-chip">Prompt guard</span> : null}
+              <span className="status-chip">{result.latency_ms.toFixed(0)} ms</span>
+              <span className="status-chip">{result.citations.length} citations</span>
             </div>
             <p className="answer-text">{result.answer}</p>
+
+            {result.refusal_reason ? (
+              <div className="warning-box">
+                <strong>Refusal reason</strong>
+                <p>{result.refusal_reason}</p>
+              </div>
+            ) : null}
 
             {result.unsupported_sentences.length > 0 && (
               <div className="warning-box">
@@ -78,6 +99,41 @@ export function QueryPage({ result, onSubmitQuestion }: QueryPageProps) {
               </div>
             )}
           </section>
+
+          {result.sentence_support.length > 0 ? (
+            <section className="panel">
+              <div className="panel-header">
+                <h3>Claim Support Verification</h3>
+                <span className="panel-tag">{result.sentence_support.length} sentences</span>
+              </div>
+              <div className="claim-list">
+                {result.sentence_support.map((item, index) => (
+                  <article key={`${item.status}-${index}`} className={`claim-card ${item.status}`}>
+                    <div className="claim-card-head">
+                      <strong>{SUPPORT_LABELS[item.status] ?? item.status}</strong>
+                      <span>{item.best_overlap} overlap terms</span>
+                    </div>
+                    <p>{item.sentence}</p>
+                    {item.reason ? <small>{item.reason}</small> : null}
+                  </article>
+                ))}
+              </div>
+            </section>
+          ) : null}
+
+          {result.retrieved_documents.length > 0 ? (
+            <section className="panel">
+              <div className="panel-header">
+                <h3>Retrieved Documents</h3>
+                <span className="panel-tag">{result.retrieved_documents.length} documents</span>
+              </div>
+              <div className="chip-row">
+                {result.retrieved_documents.map((document) => (
+                  <span key={document} className="status-chip">{document}</span>
+                ))}
+              </div>
+            </section>
+          ) : null}
 
           <CitationPanel
             citations={result.citations}
