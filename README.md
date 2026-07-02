@@ -10,6 +10,9 @@ This repository contains a full-stack final year project for a reliable Retrieva
 - Multi-document conflict analysis for policy-style documents
 - Prompt-injection guardrails and RAG-specific audit metadata
 - Evaluation dashboard for retrieval, citation, refusal, hallucination, and latency signals
+- PostgreSQL-backed document/chunk/audit persistence when `DATABASE_URL` is configured
+- PostgreSQL-backed original-file storage with disk cache restoration for reindexing
+- OCR fallback for scanned PDFs when Tesseract is available
 - Docker/Render deployment from one public service
 - Gemini-powered generation and embeddings through the Gemini API free tier
 
@@ -36,6 +39,7 @@ uvicorn app.main:app --reload
 
 Copy `.env.example` to `.env` at the repo root and set `GEMINI_API_KEY` before starting the backend if you want the real Gemini integration. Set `MODEL_PROVIDER=local` to stay on the offline fallback adapters.
 The default upload limit is `10 MB` to avoid long synchronous indexing delays on very large PDFs.
+Set `DATABASE_URL` to use PostgreSQL persistence for documents, chunks, audit logs, and original uploaded files; otherwise the app falls back to in-memory stores.
 
 ### Frontend
 
@@ -62,6 +66,8 @@ The deployment image:
 - builds the React frontend during the Docker build
 - serves the frontend from the FastAPI app
 - exposes the backend and UI from one public URL
+- stores documents, chunks, audit logs, and uploaded file bytes in Render PostgreSQL when `DATABASE_URL` is present
+- uses `/app/data/uploads` as an ephemeral working cache that can be restored from PostgreSQL for reindexing
 - keeps the user corpus empty by default
 
 ## Default Demo Credentials
@@ -79,7 +85,7 @@ The deployment image:
 
 ## What You Can Extend Next
 
-- Replace in-memory repositories with persistent PostgreSQL-backed repositories
-- Add OCR for scanned PDFs; current PDF table extraction is text/table based through `pdfplumber`
+- Add migration tooling for production PostgreSQL schema changes
+- Improve OCR quality controls and language packs for scanned PDFs
 - Add richer admin analytics and full role policy management
 - Add batch embeddings and persistent vector storage for larger corpora

@@ -68,8 +68,8 @@ export function DashboardPage({
             <span>Backend Version</span>
           </article>
           <article className="stat-pill">
-            <strong>{health?.model_provider ?? "local"}</strong>
-            <span>Model Provider</span>
+            <strong>{health?.storage_backend ?? "memory"}</strong>
+            <span>Storage Backend</span>
           </article>
         </div>
       </section>
@@ -81,7 +81,8 @@ export function DashboardPage({
         </div>
 
         <p className="muted">
-          Maximum upload size: {health?.max_upload_size_mb ?? 10} MB. Large PDFs should be split before upload.
+          Maximum upload size: {health?.max_upload_size_mb ?? 10} MB. OCR is{" "}
+          {health?.ocr_enabled ? "enabled for scanned PDFs" : "disabled"}.
         </p>
 
         <label className="upload-zone">

@@ -64,7 +64,7 @@ Use a public and reproducible corpus for development and evaluation so the proje
 8. Risks and Mitigations
 - Weak retrieval quality on mixed queries: use hybrid retrieval, metadata, chunk tuning, and reranking.
 - Hallucinations despite retrieval: use strict prompting, refusal threshold, and sentence verification.
-- Scanned PDFs without extractable text: reject in v1 and document OCR as future work.
+- Scanned PDFs without extractable text: use OCR fallback when Tesseract is available; clearly report OCR failures.
 - Solo-project delivery pressure: finish a usable MVP first, then improve polish and metrics.
 
 9. Timeline
@@ -83,4 +83,3 @@ Use a public and reproducible corpus for development and evaluation so the proje
 - Docker Compose deployment files.
 - Evaluation outputs and charts for the final report.
 - Project plan document and final report content support.
-

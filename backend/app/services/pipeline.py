@@ -52,7 +52,15 @@ class RAGPipeline:
     def bootstrap(self) -> None:
         self.settings.ensure_directories()
         with self._lock:
-            if self.store.list_documents():
+            existing_documents = self.store.list_documents()
+            if existing_documents:
+                for document in existing_documents:
+                    if document.status == "processing":
+                        threading.Thread(
+                            target=self._complete_ingestion_job,
+                            args=(document.id, document.owner_username),
+                            daemon=True,
+                        ).start()
                 self.retrieval_engine.update(self.store.all_chunks())
                 return
 
@@ -69,6 +77,7 @@ class RAGPipeline:
             parsed = parse_document(path)
             existing = self.store.get_document_by_checksum(parsed.checksum)
             if existing and not allow_duplicates:
+                self.store.save_document_file(existing.id, existing.filename, existing.content_type, path.read_bytes())
                 self.audit_store.append(actor=actor, action="document.duplicate", detail=f"Skipped duplicate {path.name}.")
                 return existing
 
@@ -85,6 +94,7 @@ class RAGPipeline:
             )
 
             stored = self.store.save_document(document, chunks)
+            self.store.save_document_file(stored.id, stored.filename, stored.content_type, path.read_bytes())
             self.retrieval_engine.update(self.store.all_chunks())
             self.audit_store.append(
                 actor=actor,
@@ -99,6 +109,7 @@ class RAGPipeline:
         with self._lock:
             existing = self.store.get_document_by_checksum(checksum)
             if existing:
+                self.store.save_document_file(existing.id, existing.filename, existing.content_type, path.read_bytes())
                 path.unlink(missing_ok=True)
                 self.audit_store.append(actor=actor, action="document.duplicate", detail=f"Skipped duplicate {path.name}.")
                 return existing
@@ -129,6 +140,12 @@ class RAGPipeline:
                 error_message=None,
             )
             placeholder = self.store.save_document(document, [])
+            self.store.save_document_file(
+                placeholder.id,
+                placeholder.filename,
+                placeholder.content_type,
+                path.read_bytes(),
+            )
             self.audit_store.append(
                 actor=actor,
                 action="document.ingest_queued",
@@ -150,11 +167,12 @@ class RAGPipeline:
             return
 
         try:
-            parsed = parse_document(Path(document.source_path))
+            source_path = self._source_path_for_document(document)
+            parsed = parse_document(source_path)
             chunks = build_chunks(
                 document_id=document.id,
                 document_name=document.filename,
-                source_path=document.source_path,
+                source_path=str(source_path),
                 pages=parsed.pages,
                 chunk_size=self.settings.chunk_size,
                 chunk_overlap=self.settings.chunk_overlap,
@@ -206,11 +224,12 @@ class RAGPipeline:
             if not document:
                 raise ValueError("Document not found.")
 
-            parsed = parse_document(Path(document.source_path))
+            source_path = self._source_path_for_document(document)
+            parsed = parse_document(source_path)
             chunks = build_chunks(
                 document_id=document.id,
                 document_name=document.filename,
-                source_path=document.source_path,
+                source_path=str(source_path),
                 pages=parsed.pages,
                 chunk_size=self.settings.chunk_size,
                 chunk_overlap=self.settings.chunk_overlap,
@@ -245,6 +264,19 @@ class RAGPipeline:
             metadata={"document_id": document.id, "version": document.version},
         )
         return deleted or document
+
+    def _source_path_for_document(self, document: DocumentRecord) -> Path:
+        source_path = Path(document.source_path)
+        if source_path.exists():
+            return source_path
+
+        content = self.store.get_document_file(document.id)
+        if content is None:
+            return source_path
+
+        source_path.parent.mkdir(parents=True, exist_ok=True)
+        source_path.write_bytes(content)
+        return source_path
 
     def update_document_permissions(
         self,

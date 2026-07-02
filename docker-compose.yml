@@ -8,6 +8,10 @@ services:
     environment:
       JWT_SECRET: ${JWT_SECRET:-change-me-before-production}
       TOKEN_EXPIRY_MINUTES: ${TOKEN_EXPIRY_MINUTES:-720}
+      DATABASE_URL: ${DATABASE_URL:-postgresql://rag:rag@postgres:5432/rag}
+      UPLOAD_DIR: /app/data/uploads
+      CORPUS_DIR: /app/data/corpus
+      ENABLE_OCR: ${ENABLE_OCR:-true}
     ports:
       - "8000:8000"
     volumes:
@@ -49,4 +53,3 @@ services:
 volumes:
   postgres_data:
   qdrant_data:
-

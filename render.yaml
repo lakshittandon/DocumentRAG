@@ -30,3 +30,16 @@ services:
         value: "10"
       - key: CORPUS_DIR
         value: /app/data/corpus
+      - key: UPLOAD_DIR
+        value: /app/data/uploads
+      - key: ENABLE_OCR
+        value: "true"
+      - key: OCR_LANGUAGE
+        value: eng
+      - key: DATABASE_URL
+        fromDatabase:
+          name: reliable-rag-postgres
+          property: connectionString
+databases:
+  - name: reliable-rag-postgres
+    plan: free

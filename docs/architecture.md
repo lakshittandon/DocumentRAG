@@ -4,14 +4,15 @@
 
 1. A user logs in through `/auth/login` and receives a signed access token.
 2. Documents are uploaded through `/documents/upload` and stored under `data/uploads/`.
-3. The parser extracts page-level text and metadata from TXT, Markdown, and text-based PDF inputs, with simple PDF table extraction when available.
-4. The chunker creates overlapping chunks tagged with document, page, and section metadata.
-5. The retrieval engine runs dense retrieval and BM25 retrieval, fuses them with RRF, and reranks the result set.
-6. The generator creates a grounded answer from the strongest evidence chunks.
-7. The verifier scores answer support and flags unsupported sentences.
-8. Version comparison can diff indexed versions of the same logical document.
-9. Conflict analysis scans policy-style statements across documents for likely contradictions.
-10. Evaluation runs call the same query path repeatedly against a fixed benchmark pack.
+3. When PostgreSQL is configured, document metadata, chunks, audit logs, and original file bytes are persisted in the database; the upload directory acts as a working cache.
+4. The parser extracts page-level text and metadata from TXT, Markdown, and PDFs, with simple PDF table extraction and OCR fallback for scanned pages when Tesseract is available.
+5. The chunker creates overlapping chunks tagged with document, page, and section metadata.
+6. The retrieval engine runs dense retrieval and BM25 retrieval, fuses them with RRF, and reranks the result set.
+7. The generator creates a grounded answer from the strongest evidence chunks.
+8. The verifier scores answer support and flags unsupported sentences.
+9. Version comparison can diff indexed versions of the same logical document.
+10. Conflict analysis scans policy-style statements across documents for likely contradictions.
+11. Evaluation runs call the same query path repeatedly against a fixed benchmark pack.
 
 ## Frontend Flow
 
@@ -25,6 +26,5 @@
 ## Extension Points
 
 - The backend can run with Gemini-hosted generation and embeddings or with local fallback adapters depending on `MODEL_PROVIDER`.
-- Replace in-memory stores with persistent PostgreSQL-backed repositories.
-- Add OCR for scanned/image-only PDFs and stronger table extraction for complex PDF documents.
+- Add stronger table extraction for complex PDF documents.
 - Move retrieval indices to external Qdrant and Whoosh services as the corpus grows.

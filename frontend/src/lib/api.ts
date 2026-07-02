@@ -162,6 +162,8 @@ export interface HealthStatus {
   generation_model: string;
   embedding_model: string;
   max_upload_size_mb: number;
+  storage_backend: string;
+  ocr_enabled: boolean;
 }
 
 export class ApiError extends Error {

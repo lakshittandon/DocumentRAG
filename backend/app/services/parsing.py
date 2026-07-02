@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 import hashlib
+import os
 
 from app.services.chunking import ParsedPage, infer_section
 
@@ -94,6 +95,8 @@ def _parse_pdf_with_pdfplumber(path: Path) -> ParsedDocument:
     import pdfplumber
 
     pages: list[ParsedPage] = []
+    enable_ocr = os.getenv("ENABLE_OCR", "true").lower() in {"1", "true", "yes"}
+    ocr_language = os.getenv("OCR_LANGUAGE", "eng")
     with pdfplumber.open(str(path)) as pdf:
         for index, page in enumerate(pdf.pages, start=1):
             extracted = (page.extract_text() or "").strip()
@@ -104,6 +107,8 @@ def _parse_pdf_with_pdfplumber(path: Path) -> ParsedDocument:
                     table_blocks.append(f"TABLE {table_index}: {flattened}")
 
             combined = "\n".join(part for part in [extracted, *table_blocks] if part).strip()
+            if not combined and enable_ocr:
+                combined = _ocr_pdf_page(page, language=ocr_language)
             if not combined:
                 continue
             normalized = " ".join(combined.replace("\t", " ").split())
@@ -127,6 +132,23 @@ def _parse_pdf_with_pdfplumber(path: Path) -> ParsedDocument:
         source_path=str(path),
         pages=pages,
     )
+
+
+def _ocr_pdf_page(page, language: str) -> str:
+    try:
+        import pytesseract
+    except ImportError as exc:
+        raise UnsupportedDocumentError("OCR support requires the pytesseract dependency.") from exc
+
+    try:
+        image = page.to_image(resolution=200).original
+        return " ".join(pytesseract.image_to_string(image, lang=language).split())
+    except pytesseract.TesseractNotFoundError as exc:
+        raise UnsupportedDocumentError(
+            "OCR support requires the Tesseract system package to be installed."
+        ) from exc
+    except Exception as exc:
+        raise UnsupportedDocumentError(f"OCR failed for a scanned PDF page: {exc}") from exc
 
 
 def _flatten_table(table: list[list[str | None]]) -> str:

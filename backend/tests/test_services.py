@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+import shutil
 import tempfile
 import unittest
 
@@ -19,6 +20,26 @@ class ParsingAndChunkingTests(unittest.TestCase):
             parsed = parse_document(file_path)
             self.assertEqual(parsed.filename, "notes.txt")
             self.assertEqual(parsed.pages[0].section, "INTRODUCTION")
+
+    @unittest.skipUnless(shutil.which("tesseract"), "Tesseract OCR binary is not installed")
+    def test_parse_scanned_pdf_with_ocr(self) -> None:
+        from PIL import Image, ImageDraw
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            image = Image.new("RGB", (1200, 700), "white")
+            draw = ImageDraw.Draw(image)
+            draw.text((80, 120), "SCANNED POLICY", fill="black")
+            draw.text((80, 220), "Remote work is allowed for two days per week.", fill="black")
+
+            file_path = Path(temp_dir) / "scanned_policy.pdf"
+            image.save(file_path, "PDF", resolution=150.0)
+
+            parsed = parse_document(file_path)
+
+            self.assertEqual(parsed.filename, "scanned_policy.pdf")
+            self.assertEqual(len(parsed.pages), 1)
+            self.assertIn("Remote work", parsed.pages[0].text)
+            self.assertIn("two days", parsed.pages[0].text)
 
     def test_build_chunks_creates_overlap(self) -> None:
         page = ParsedPage(

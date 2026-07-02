@@ -99,6 +99,8 @@ def health(app_container=Depends(get_container)) -> HealthResponse:
             else "local-hashed"
         ),
         max_upload_size_mb=app_container.settings.max_upload_size_mb,
+        storage_backend="postgresql" if app_container.settings.database_url else "memory",
+        ocr_enabled=app_container.settings.enable_ocr,
     )
 
 

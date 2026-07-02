@@ -10,15 +10,20 @@ from app.services.models import (
     OverlapVerifier,
 )
 from app.services.pipeline import RAGPipeline
-from app.services.storage import AuditLogStore, KnowledgeBaseStore, UserStore
+from app.services.storage import (
+    AuditLogStore,
+    KnowledgeBaseStore,
+    PostgresAuditLogStore,
+    PostgresKnowledgeBaseStore,
+    UserStore,
+)
 
 
 class AppContainer:
     def __init__(self) -> None:
         self.settings = settings
         self.user_store = UserStore()
-        self.knowledge_base = KnowledgeBaseStore()
-        self.audit_store = AuditLogStore()
+        self.knowledge_base, self.audit_store = self._build_stores()
         self.auth_service = AuthService(
             user_store=self.user_store,
             audit_store=self.audit_store,
@@ -67,6 +72,14 @@ class AppContainer:
         raise RuntimeError(
             f"Unsupported MODEL_PROVIDER '{self.settings.model_provider}'. Use 'local' or 'gemini'."
         )
+
+    def _build_stores(self):
+        if self.settings.database_url:
+            return (
+                PostgresKnowledgeBaseStore(self.settings.database_url),
+                PostgresAuditLogStore(self.settings.database_url),
+            )
+        return KnowledgeBaseStore(), AuditLogStore()
 
 
 container = AppContainer()
