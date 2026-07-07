@@ -8,9 +8,44 @@ from unittest.mock import patch
 
 from app.domain.types import ChunkRecord
 from app.services.chunking import ParsedPage, build_chunks
+from app.services.auth import AuthService
 from app.services.models import HashedEmbeddingModel, HeuristicChatModel, OllamaChatModel, OverlapVerifier
 from app.services.parsing import parse_document
 from app.services.retrieval import RetrievalEngine
+from app.services.storage import AuditLogStore, UserStore
+
+
+class AuthServiceTests(unittest.TestCase):
+    def test_register_creates_user_and_allows_login(self) -> None:
+        audit_store = AuditLogStore()
+        auth_service = AuthService(
+            user_store=UserStore(),
+            audit_store=audit_store,
+            secret="secret",
+            expiry_minutes=60,
+        )
+
+        token = auth_service.register("Teacher.User", "Teacher User", "secret123")
+        self.assertTrue(token)
+
+        user = auth_service.get_user_from_token(token)
+        self.assertEqual(user.username, "teacher.user")
+        self.assertEqual(user.role, "user")
+
+        login_token = auth_service.authenticate("TEACHER.USER", "secret123")
+        self.assertTrue(login_token)
+
+    def test_register_rejects_duplicate_username(self) -> None:
+        auth_service = AuthService(
+            user_store=UserStore(),
+            audit_store=AuditLogStore(),
+            secret="secret",
+            expiry_minutes=60,
+        )
+        auth_service.register("student", "Student User", "secret123")
+
+        with self.assertRaises(ValueError):
+            auth_service.register("Student", "Student User", "secret123")
 
 
 class ParsingAndChunkingTests(unittest.TestCase):

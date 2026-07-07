@@ -54,6 +54,31 @@ button {
   padding: 40px;
 }
 
+.auth-toggle {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  padding: 6px;
+  margin: 22px 0;
+  border-radius: 999px;
+  background: rgba(16, 42, 67, 0.08);
+}
+
+.auth-toggle-button {
+  border: none;
+  border-radius: 999px;
+  padding: 10px 14px;
+  color: #334e68;
+  background: transparent;
+}
+
+.auth-toggle-button.active {
+  color: #0b7285;
+  background: rgba(255, 255, 255, 0.86);
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08);
+  font-weight: 700;
+}
+
 .login-card h1,
 .hero-card h2,
 .panel h3,

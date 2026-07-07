@@ -19,6 +19,7 @@ from app.schemas.api import (
     HealthResponse,
     LoginRequest,
     QueryRequest,
+    RegisterRequest,
     QueryResponse,
     ReindexResponse,
     TokenResponse,
@@ -78,11 +79,28 @@ def get_current_user(
 
 @router.post("/auth/login", response_model=TokenResponse)
 def login(payload: LoginRequest, app_container=Depends(get_container)) -> TokenResponse:
+    username = payload.username.strip().lower()
     try:
-        token = app_container.auth_service.authenticate(payload.username, payload.password)
-        user = app_container.user_store.get(payload.username)
+        token = app_container.auth_service.authenticate(username, payload.password)
+        user = app_container.user_store.get(username)
     except ValueError as exc:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(exc)) from exc
+
+    return TokenResponse(access_token=token, username=user.username, role=user.role)
+
+
+@router.post("/auth/register", response_model=TokenResponse, status_code=status.HTTP_201_CREATED)
+def register(payload: RegisterRequest, app_container=Depends(get_container)) -> TokenResponse:
+    username = payload.username.strip().lower()
+    try:
+        token = app_container.auth_service.register(
+            username=username,
+            full_name=payload.full_name,
+            password=payload.password,
+        )
+        user = app_container.user_store.get(username)
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc)) from exc
 
     return TokenResponse(access_token=token, username=user.username, role=user.role)
 

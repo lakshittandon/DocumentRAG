@@ -22,7 +22,7 @@ This repository contains a full-stack final year project for a reliable Retrieva
 
 - `backend/` FastAPI application and core RAG pipeline
 - `frontend/` React application for corpus, query, analysis, evaluation, and logs
-- `deliverables/sample_documents/` sample PDF/Markdown document for testing the demo
+- `deliverables/` optional project artifacts and sample files generated during report preparation
 - `docs/` project documentation, architecture notes, and deliverables
 - `deployment/` Dockerfiles and deployment assets
 - `scripts/` helper utilities such as project-plan docx export
@@ -72,17 +72,19 @@ The deployment image:
 - uses `/app/data/uploads` as an ephemeral working cache that can be restored from PostgreSQL for reindexing
 - keeps the user corpus empty by default
 
-## Default Demo Credentials
+## Login And Registration
 
-- Username: `admin`
-- Password: `admin123`
+The hosted demo opens on a real login/register screen. New users can create their own account, while the built-in admin account remains available from the `Use Demo Admin` button for quick evaluation.
+
+- Demo admin username: `admin`
+- Demo admin password: `admin123`
 
 ## What Is Already Implemented
 
 - Document upload, async ingestion, chunking, indexing, query, logging, evaluation, version comparison, and conflict-analysis routes
 - Provider-agnostic model interfaces with Gemini adapters, a real Ollama chat adapter, and deterministic local fallback adapters
 - React demo screens for corpus management, source inspection, querying, analysis, evaluation, and logs
-- Sample document and Gemini-ready configuration for immediate local testing
+- Empty hosted corpus by default, plus Gemini-ready configuration for immediate local testing
 - Project-plan source document and export script for `.docx`
 
 ## What You Can Extend Next

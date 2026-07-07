@@ -24,6 +24,98 @@ class UserStore:
     def get(self, username: str) -> UserAccount | None:
         return self._users.get(username)
 
+    def create(self, username: str, full_name: str, password: str, role: str = "user") -> UserAccount:
+        normalized_username = username.strip().lower()
+        if normalized_username in self._users:
+            raise ValueError("Username already exists.")
+
+        user = UserAccount(
+            username=normalized_username,
+            full_name=full_name.strip() or normalized_username,
+            role=role,
+            hashed_password=hash_password(password),
+        )
+        self._users[user.username] = user
+        return user
+
+
+class PostgresUserStore(UserStore):
+    def __init__(self, database_url: str) -> None:
+        self.database_url = database_url
+        self._ensure_schema()
+        self._ensure_demo_admin()
+
+    def _connect(self):
+        return _connect_postgres(self.database_url)
+
+    def _ensure_schema(self) -> None:
+        with self._connect() as conn:
+            conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS users (
+                    username TEXT PRIMARY KEY,
+                    full_name TEXT NOT NULL,
+                    role TEXT NOT NULL,
+                    hashed_password TEXT NOT NULL,
+                    created_at TEXT NOT NULL,
+                    updated_at TEXT NOT NULL
+                )
+                """
+            )
+
+    def _ensure_demo_admin(self) -> None:
+        if self.get("admin"):
+            return
+        self.create("admin", "Lakshit Tandon", "admin123", role="admin")
+
+    def get(self, username: str) -> UserAccount | None:
+        normalized_username = username.strip().lower()
+        with self._connect() as conn:
+            row = conn.execute(
+                """
+                SELECT username, full_name, role, hashed_password
+                FROM users
+                WHERE username = %s
+                """,
+                (normalized_username,),
+            ).fetchone()
+        if not row:
+            return None
+        return UserAccount(
+            username=row[0],
+            full_name=row[1],
+            role=row[2],
+            hashed_password=row[3],
+        )
+
+    def create(self, username: str, full_name: str, password: str, role: str = "user") -> UserAccount:
+        normalized_username = username.strip().lower()
+        if self.get(normalized_username):
+            raise ValueError("Username already exists.")
+
+        user = UserAccount(
+            username=normalized_username,
+            full_name=full_name.strip() or normalized_username,
+            role=role,
+            hashed_password=hash_password(password),
+        )
+        with self._connect() as conn:
+            conn.execute(
+                """
+                INSERT INTO users (username, full_name, role, hashed_password, created_at, updated_at)
+                VALUES (%s, %s, %s, %s, %s, %s)
+                """,
+                (
+                    user.username,
+                    user.full_name,
+                    user.role,
+                    user.hashed_password,
+                    utc_now_iso(),
+                    utc_now_iso(),
+                ),
+            )
+        return user
+
 
 class KnowledgeBaseStore:
     def __init__(self) -> None:

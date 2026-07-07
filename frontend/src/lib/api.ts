@@ -255,6 +255,12 @@ export const api = {
       body: JSON.stringify({ username, password }),
     }),
 
+  register: (username: string, fullName: string, password: string) =>
+    request<TokenResponse>("/auth/register", {
+      method: "POST",
+      body: JSON.stringify({ username, full_name: fullName, password }),
+    }),
+
   health: () => request<HealthStatus>("/health"),
 
   listDocuments: (token: string) => request<DocumentRecord[]>("/documents", {}, token),

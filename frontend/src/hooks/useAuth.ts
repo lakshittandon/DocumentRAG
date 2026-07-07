@@ -33,8 +33,7 @@ export function useAuth() {
     setIsReady(true);
   }, []);
 
-  const login = async (username: string, password: string) => {
-    const response: TokenResponse = await api.login(username, password);
+  const persistAuth = (response: TokenResponse) => {
     const nextState = {
       accessToken: response.access_token,
       username: response.username,
@@ -42,6 +41,16 @@ export function useAuth() {
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(nextState));
     setAuth(nextState);
+  };
+
+  const login = async (username: string, password: string) => {
+    const response: TokenResponse = await api.login(username, password);
+    persistAuth(response);
+  };
+
+  const register = async (username: string, fullName: string, password: string) => {
+    const response: TokenResponse = await api.register(username, fullName, password);
+    persistAuth(response);
   };
 
   const logout = () => {
@@ -54,7 +63,7 @@ export function useAuth() {
     isReady,
     isAuthenticated: Boolean(auth?.accessToken),
     login,
+    register,
     logout,
   };
 }
-

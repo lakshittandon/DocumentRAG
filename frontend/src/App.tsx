@@ -25,7 +25,7 @@ const DEMO_USERNAME = "admin";
 const DEMO_PASSWORD = "admin123";
 
 export default function App() {
-  const { auth, isReady, isAuthenticated, login, logout } = useAuth();
+  const { auth, isReady, isAuthenticated, login, register, logout } = useAuth();
   const [activeView, setActiveView] = useState<AppView>("dashboard");
   const [documents, setDocuments] = useState<DocumentRecord[]>([]);
   const [health, setHealth] = useState<HealthStatus | null>(null);
@@ -36,8 +36,6 @@ export default function App() {
   const [versionComparison, setVersionComparison] = useState<VersionComparison | null>(null);
   const [conflictAnalysis, setConflictAnalysis] = useState<ConflictAnalysis | null>(null);
   const [globalError, setGlobalError] = useState("");
-  const [isBootstrappingDemo, setIsBootstrappingDemo] = useState(false);
-  const [bootstrapFailed, setBootstrapFailed] = useState(false);
 
   const loadAppData = async () => {
     if (!auth?.accessToken) {
@@ -83,37 +81,18 @@ export default function App() {
     return () => window.clearInterval(intervalId);
   }, [documents, isAuthenticated]);
 
-  useEffect(() => {
-    if (!isReady || isAuthenticated || isBootstrappingDemo || bootstrapFailed) {
-      return;
-    }
-
-    setIsBootstrappingDemo(true);
-    setGlobalError("");
-
-    void login(DEMO_USERNAME, DEMO_PASSWORD)
-      .catch((caughtError) => {
-        setBootstrapFailed(true);
-        setGlobalError(
-          caughtError instanceof Error
-            ? caughtError.message
-            : "Unable to enter the demo workspace automatically.",
-        );
-      })
-      .finally(() => {
-        setIsBootstrappingDemo(false);
-      });
-  }, [bootstrapFailed, isAuthenticated, isBootstrappingDemo, isReady, login]);
-
   if (!isReady) {
     return <div className="loading-shell">Preparing console...</div>;
   }
 
   if (!isAuthenticated || !auth) {
-    if (isBootstrappingDemo) {
-      return <div className="loading-shell">Entering demo workspace...</div>;
-    }
-    return <LoginPage onLogin={login} />;
+    return (
+      <LoginPage
+        onLogin={login}
+        onRegister={register}
+        onDemoLogin={() => login(DEMO_USERNAME, DEMO_PASSWORD)}
+      />
+    );
   }
 
   const handleUpload = async (file: File) => {

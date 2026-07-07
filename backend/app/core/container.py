@@ -16,6 +16,7 @@ from app.services.storage import (
     KnowledgeBaseStore,
     PostgresAuditLogStore,
     PostgresKnowledgeBaseStore,
+    PostgresUserStore,
     UserStore,
 )
 
@@ -23,8 +24,7 @@ from app.services.storage import (
 class AppContainer:
     def __init__(self) -> None:
         self.settings = settings
-        self.user_store = UserStore()
-        self.knowledge_base, self.audit_store = self._build_stores()
+        self.knowledge_base, self.audit_store, self.user_store = self._build_stores()
         self.auth_service = AuthService(
             user_store=self.user_store,
             audit_store=self.audit_store,
@@ -90,8 +90,9 @@ class AppContainer:
             return (
                 PostgresKnowledgeBaseStore(self.settings.database_url),
                 PostgresAuditLogStore(self.settings.database_url),
+                PostgresUserStore(self.settings.database_url),
             )
-        return KnowledgeBaseStore(), AuditLogStore()
+        return KnowledgeBaseStore(), AuditLogStore(), UserStore()
 
 
 container = AppContainer()
