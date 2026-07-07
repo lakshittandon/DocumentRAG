@@ -49,6 +49,22 @@ class GeminiAPIError(RuntimeError):
     pass
 
 
+class OllamaAPIError(RuntimeError):
+    pass
+
+
+def _post_json(endpoint: str, payload: dict, timeout_seconds: int) -> dict:
+    body = json.dumps(payload).encode("utf-8")
+    http_request = request.Request(
+        endpoint,
+        data=body,
+        headers={"Content-Type": "application/json"},
+        method="POST",
+    )
+    with request.urlopen(http_request, timeout=timeout_seconds) as response:
+        return json.loads(response.read().decode("utf-8"))
+
+
 def _post_gemini_json(
     *,
     api_base_url: str,
@@ -68,7 +84,6 @@ def _post_gemini_json(
         },
         method="POST",
     )
-
     try:
         with request.urlopen(http_request, timeout=timeout_seconds) as response:
             return json.loads(response.read().decode("utf-8"))
@@ -206,6 +221,79 @@ class GeminiChatModel:
         if refusal_text.lower() in answer.strip().lower():
             return refusal_text
         return answer.strip()
+
+
+@dataclass(slots=True)
+class OllamaChatModel:
+    base_url: str = "http://localhost:11434"
+    model: str = "qwen2.5:0.5b"
+    timeout_seconds: int = 120
+    temperature: float = 0.2
+
+    def answer(self, question: str, contexts: list[ChunkRecord], refusal_text: str) -> str:
+        if not contexts:
+            return refusal_text
+
+        evidence_lines = []
+        for index, chunk in enumerate(contexts, start=1):
+            evidence_lines.append(
+                "\n".join(
+                    [
+                        f"[Evidence {index}]",
+                        f"Document: {chunk.document_name}",
+                        f"Page: {chunk.page}",
+                        f"Section: {chunk.section}",
+                        f"Text: {chunk.text}",
+                    ]
+                )
+            )
+
+        payload = {
+            "model": self.model,
+            "stream": False,
+            "messages": [
+                {
+                    "role": "system",
+                    "content": (
+                        "You are a grounded document QA assistant. "
+                        "Use only the provided evidence. "
+                        f"If the evidence is insufficient, reply with exactly: {refusal_text}"
+                    ),
+                },
+                {
+                    "role": "user",
+                    "content": "\n\n".join(
+                        [
+                            f"Question: {question}",
+                            "Evidence:",
+                            *evidence_lines,
+                            (
+                                "Answer the question using only the evidence. "
+                                "Do not invent facts. Keep the answer concise."
+                            ),
+                        ]
+                    ),
+                },
+            ],
+            "options": {"temperature": self.temperature},
+        }
+
+        endpoint = f"{self.base_url.rstrip('/')}/api/chat"
+        try:
+            response_payload = _post_json(endpoint, payload, self.timeout_seconds)
+        except error.HTTPError as exc:
+            detail = exc.read().decode("utf-8", errors="replace")
+            raise OllamaAPIError(f"Ollama API request failed with HTTP {exc.code}: {detail}") from exc
+        except error.URLError as exc:
+            raise OllamaAPIError(f"Ollama API request failed: {exc.reason}") from exc
+
+        message = response_payload.get("message", {})
+        answer = str(message.get("content", "")).strip()
+        if not answer:
+            return refusal_text
+        if refusal_text.lower() in answer.lower():
+            return refusal_text
+        return answer
 
 
 @dataclass(slots=True)

@@ -348,6 +348,44 @@ button {
   font-size: 0.86rem;
 }
 
+.preview-metadata {
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 8px 18px;
+  padding: 14px;
+  border-radius: 18px;
+  background: rgba(248, 250, 252, 0.9);
+  border: 1px solid rgba(16, 42, 67, 0.08);
+}
+
+.source-preview-box {
+  max-height: 360px;
+  overflow: auto;
+  border-radius: 18px;
+  border: 1px solid rgba(16, 42, 67, 0.1);
+  background: #0f172a;
+  color: #e2e8f0;
+}
+
+.source-preview-box pre {
+  margin: 0;
+  padding: 18px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.chunk-preview-grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+}
+
+.chunk-preview-card {
+  padding: 16px;
+  border-radius: 18px;
+  border: 1px solid rgba(16, 42, 67, 0.08);
+  background: rgba(248, 250, 252, 0.9);
+}
+
 .sample-list {
   display: grid;
   gap: 12px;

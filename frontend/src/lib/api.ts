@@ -25,6 +25,24 @@ export interface DocumentRecord {
   updated_at: string;
 }
 
+export interface ChunkPreview {
+  id: string;
+  document_id: string;
+  document_name: string;
+  text: string;
+  page: number;
+  section: string;
+  token_count: number;
+  source_path: string;
+}
+
+export interface DocumentPreview {
+  document: DocumentRecord;
+  chunks: ChunkPreview[];
+  extracted_text: string;
+  total_tokens: number;
+}
+
 export interface RetrievalHit {
   chunk_id: string;
   document_id: string;
@@ -93,6 +111,7 @@ export interface EvaluationSample {
   passed: boolean;
   refused: boolean;
   recall_at_5: number;
+  ndcg_at_5: number;
   reciprocal_rank: number;
   citation_correct: boolean;
   latency_ms: number;
@@ -102,6 +121,7 @@ export interface EvaluationRun {
   id: string;
   sample_count: number;
   recall_at_5: number;
+  ndcg_at_5: number;
   mrr: number;
   answer_accuracy: number;
   citation_correctness: number;
@@ -238,6 +258,9 @@ export const api = {
   health: () => request<HealthStatus>("/health"),
 
   listDocuments: (token: string) => request<DocumentRecord[]>("/documents", {}, token),
+
+  previewDocument: (documentId: string, token: string) =>
+    request<DocumentPreview>(`/documents/${documentId}/preview`, {}, token),
 
   uploadDocument: (file: File, token: string) => {
     const formData = new FormData();

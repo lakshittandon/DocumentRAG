@@ -6,15 +6,17 @@ This repository contains a full-stack final year project for a reliable Retrieva
 - React + TypeScript frontend
 - Hybrid retrieval with dense scoring, BM25, RRF, and reranking
 - Citation-aware answer generation and sentence-level verification
+- Document preview/source inspection with extracted text and chunk metadata
 - Document version metadata and previous-version comparison
 - Multi-document conflict analysis for policy-style documents
 - Prompt-injection guardrails and RAG-specific audit metadata
-- Evaluation dashboard for retrieval, citation, refusal, hallucination, and latency signals
+- Evaluation dashboard for Recall@5, nDCG@5, MRR, citation, refusal, hallucination, and latency signals
 - PostgreSQL-backed document/chunk/audit persistence when `DATABASE_URL` is configured
 - PostgreSQL-backed original-file storage with disk cache restoration for reindexing
 - OCR fallback for scanned PDFs when Tesseract is available
 - Docker/Render deployment from one public service
 - Gemini-powered generation and embeddings through the Gemini API free tier
+- Real Ollama local generation mode for privacy/cost comparison
 
 ## Repository Layout
 
@@ -37,7 +39,7 @@ pip install -e .[dev]
 uvicorn app.main:app --reload
 ```
 
-Copy `.env.example` to `.env` at the repo root and set `GEMINI_API_KEY` before starting the backend if you want the real Gemini integration. Set `MODEL_PROVIDER=local` to stay on the offline fallback adapters.
+Copy `.env.example` to `.env` at the repo root and set `GEMINI_API_KEY` before starting the backend if you want the real Gemini integration. The hosted Gemini default is `gemini-2.5-flash-lite`. Set `MODEL_PROVIDER=local` to stay on the deterministic offline fallback adapters. Set `MODEL_PROVIDER=ollama` with `OLLAMA_MODEL=qwen2.5:0.5b` to use the real local Ollama chat model through `OLLAMA_BASE_URL`.
 The default upload limit is `10 MB` to avoid long synchronous indexing delays on very large PDFs.
 Set `DATABASE_URL` to use PostgreSQL persistence for documents, chunks, audit logs, and original uploaded files; otherwise the app falls back to in-memory stores.
 
@@ -78,8 +80,8 @@ The deployment image:
 ## What Is Already Implemented
 
 - Document upload, async ingestion, chunking, indexing, query, logging, evaluation, version comparison, and conflict-analysis routes
-- Provider-agnostic model interfaces with Gemini adapters and deterministic local fallback adapters
-- React demo screens for corpus management, querying, analysis, evaluation, and logs
+- Provider-agnostic model interfaces with Gemini adapters, a real Ollama chat adapter, and deterministic local fallback adapters
+- React demo screens for corpus management, source inspection, querying, analysis, evaluation, and logs
 - Sample document and Gemini-ready configuration for immediate local testing
 - Project-plan source document and export script for `.docx`
 
@@ -87,5 +89,6 @@ The deployment image:
 
 - Add migration tooling for production PostgreSQL schema changes
 - Improve OCR quality controls and language packs for scanned PDFs
+- Add a local embedding model for fully local Ollama retrieval in addition to local Ollama generation
 - Add richer admin analytics and full role policy management
 - Add batch embeddings and persistent vector storage for larger corpora

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import replace
+import math
 from pathlib import Path
 import re
 import threading
@@ -12,6 +13,7 @@ from app.domain.types import (
     Citation,
     ConflictAnalysis,
     ConflictFinding,
+    DocumentPreview,
     DocumentRecord,
     EvaluationRun,
     EvaluationSampleResult,
@@ -328,6 +330,30 @@ class RAGPipeline:
                 reverse=True,
             )
 
+    def preview_document(self, document_id: str, actor: str, role: str = "admin") -> DocumentPreview:
+        with self._lock:
+            document = self.store.get_document(document_id)
+            if not document:
+                raise ValueError("Document not found.")
+            if not self._can_access_document(document, actor, role):
+                raise PermissionError("You do not have access to this document.")
+
+            chunks = self.store.document_chunks(document.id)
+
+        extracted_text = "\n\n".join(
+            f"[Page {chunk.page} | {chunk.section}]\n{chunk.text}"
+            for chunk in chunks
+        )
+        if len(extracted_text) > 12000:
+            extracted_text = f"{extracted_text[:12000].rstrip()}\n\n[Preview truncated for display.]"
+
+        return DocumentPreview(
+            document=document,
+            chunks=chunks[:20],
+            extracted_text=extracted_text,
+            total_tokens=sum(chunk.token_count for chunk in chunks),
+        )
+
     def query(self, question: str, actor: str, role: str = "admin") -> QueryResult:
         with self._lock:
             accessible_documents = {
@@ -469,8 +495,10 @@ class RAGPipeline:
         )
         return analysis
 
-    def run_evaluation(self, actor: str) -> EvaluationRun:
+    def run_evaluation(self, actor: str, sample_limit: int | None = None) -> EvaluationRun:
         benchmark = self._benchmark_samples()
+        if sample_limit is not None:
+            benchmark = benchmark[:sample_limit]
 
         with self._lock:
             chunk_map = {chunk.id: chunk for chunk in self.store.all_chunks()}
@@ -495,6 +523,7 @@ class RAGPipeline:
 
             reciprocal_rank = self._reciprocal_rank(result, expected_terms)
             recall_at_5 = 1.0 if reciprocal_rank > 0 else 0.0
+            ndcg_at_5 = self._ndcg_at_5(result, expected_terms)
             citation_correct = (
                 True
                 if expected_refusal
@@ -514,6 +543,7 @@ class RAGPipeline:
                     passed=passed,
                     refused=result.refused,
                     recall_at_5=recall_at_5,
+                    ndcg_at_5=ndcg_at_5,
                     reciprocal_rank=reciprocal_rank,
                     citation_correct=citation_correct,
                     latency_ms=result.latency_ms,
@@ -530,6 +560,7 @@ class RAGPipeline:
             id=str(uuid4()),
             sample_count=sample_count,
             recall_at_5=self._average(sample.recall_at_5 for sample in factual_samples),
+            ndcg_at_5=self._average(sample.ndcg_at_5 for sample in factual_samples),
             mrr=self._average(sample.reciprocal_rank for sample in factual_samples),
             answer_accuracy=self._average(1.0 if sample.passed else 0.0 for sample in sample_results),
             citation_correctness=self._average(1.0 if sample.citation_correct else 0.0 for sample in factual_samples),
@@ -538,7 +569,7 @@ class RAGPipeline:
             avg_latency_ms=self._average(sample.latency_ms for sample in sample_results),
             estimated_model_calls=sample_count,
             notes=(
-                "Fixed 50-sample benchmark pack for the demo handbook. Upload the sample handbook or an equivalent "
+                "Fixed benchmark pack for the demo handbook. Upload the sample handbook or an equivalent "
                 "document before running to get meaningful factual scores."
             ),
             samples=sample_results,
@@ -552,6 +583,7 @@ class RAGPipeline:
                 detail=f"Ran benchmark with {sample_count} samples.",
                 metadata={
                     "recall_at_5": run.recall_at_5,
+                    "ndcg_at_5": run.ndcg_at_5,
                     "mrr": run.mrr,
                     "answer_accuracy": run.answer_accuracy,
                     "citation_correctness": run.citation_correctness,
@@ -725,6 +757,18 @@ class RAGPipeline:
             hit_text = hit.text.lower()
             if any(term in hit_text for term in lowered_terms):
                 return round(1 / rank, 3)
+        return 0.0
+
+    @staticmethod
+    def _ndcg_at_5(result: QueryResult, expected_terms: list[str]) -> float:
+        if not expected_terms:
+            return 0.0
+
+        lowered_terms = [term.lower() for term in expected_terms]
+        for rank, hit in enumerate(result.retrieval_trace.reranked_hits[:5], start=1):
+            hit_text = hit.text.lower()
+            if any(term in hit_text for term in lowered_terms):
+                return round(1 / math.log2(rank + 1), 3)
         return 0.0
 
     @staticmethod

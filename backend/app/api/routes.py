@@ -13,6 +13,7 @@ from app.schemas.api import (
     AuditLogResponse,
     ConflictAnalysisResponse,
     DeleteDocumentResponse,
+    DocumentPreviewResponse,
     DocumentResponse,
     EvaluationRunResponse,
     HealthResponse,
@@ -39,8 +40,13 @@ def _map_document(document) -> DocumentResponse:
     return DocumentResponse(**document.to_dict())
 
 
+def _map_document_preview(preview) -> DocumentPreviewResponse:
+    return DocumentPreviewResponse(**preview.to_dict())
+
+
 def _map_query(result) -> QueryResponse:
     return QueryResponse(**result.to_dict())
+
 
 def _map_log(entry) -> AuditLogResponse:
     return AuditLogResponse(**entry.to_dict())
@@ -83,21 +89,23 @@ def login(payload: LoginRequest, app_container=Depends(get_container)) -> TokenR
 
 @router.get("/health", response_model=HealthResponse)
 def health(app_container=Depends(get_container)) -> HealthResponse:
+    if app_container.settings.model_provider == "gemini":
+        generation_model = app_container.settings.gemini_generation_model
+        embedding_model = app_container.settings.gemini_embedding_model
+    elif app_container.settings.model_provider == "ollama":
+        generation_model = app_container.settings.ollama_model
+        embedding_model = "local-hashed"
+    else:
+        generation_model = "local-heuristic"
+        embedding_model = "local-hashed"
+
     return HealthResponse(
         status="ok",
         version=app_container.settings.app_version,
         documents_indexed=len(app_container.pipeline.list_documents()),
         model_provider=app_container.settings.model_provider,
-        generation_model=(
-            app_container.settings.gemini_generation_model
-            if app_container.settings.model_provider == "gemini"
-            else "local-heuristic"
-        ),
-        embedding_model=(
-            app_container.settings.gemini_embedding_model
-            if app_container.settings.model_provider == "gemini"
-            else "local-hashed"
-        ),
+        generation_model=generation_model,
+        embedding_model=embedding_model,
         max_upload_size_mb=app_container.settings.max_upload_size_mb,
         storage_backend="postgresql" if app_container.settings.database_url else "memory",
         ocr_enabled=app_container.settings.enable_ocr,
@@ -218,6 +226,25 @@ def list_document_versions(
     except ValueError as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
     return [_map_document(document) for document in versions]
+
+
+@router.get("/documents/{document_id}/preview", response_model=DocumentPreviewResponse)
+def preview_document(
+    document_id: str,
+    current_user: UserAccount = Depends(get_current_user),
+    app_container=Depends(get_container),
+) -> DocumentPreviewResponse:
+    try:
+        preview = app_container.pipeline.preview_document(
+            document_id=document_id,
+            actor=current_user.username,
+            role=current_user.role,
+        )
+    except PermissionError as exc:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+    return _map_document_preview(preview)
 
 
 @router.post(

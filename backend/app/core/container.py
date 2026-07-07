@@ -7,6 +7,7 @@ from app.services.models import (
     GeminiEmbeddingModel,
     HashedEmbeddingModel,
     HeuristicChatModel,
+    OllamaChatModel,
     OverlapVerifier,
 )
 from app.services.pipeline import RAGPipeline
@@ -69,8 +70,19 @@ class AppContainer:
                 OverlapVerifier(),
             )
 
+        if self.settings.model_provider == "ollama":
+            return (
+                HashedEmbeddingModel(),
+                OllamaChatModel(
+                    base_url=self.settings.ollama_base_url,
+                    model=self.settings.ollama_model,
+                    timeout_seconds=self.settings.ollama_timeout_seconds,
+                ),
+                OverlapVerifier(),
+            )
+
         raise RuntimeError(
-            f"Unsupported MODEL_PROVIDER '{self.settings.model_provider}'. Use 'local' or 'gemini'."
+            f"Unsupported MODEL_PROVIDER '{self.settings.model_provider}'. Use 'local', 'gemini', or 'ollama'."
         )
 
     def _build_stores(self):

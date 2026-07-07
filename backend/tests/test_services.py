@@ -4,10 +4,11 @@ from pathlib import Path
 import shutil
 import tempfile
 import unittest
+from unittest.mock import patch
 
 from app.domain.types import ChunkRecord
 from app.services.chunking import ParsedPage, build_chunks
-from app.services.models import HashedEmbeddingModel, HeuristicChatModel, OverlapVerifier
+from app.services.models import HashedEmbeddingModel, HeuristicChatModel, OllamaChatModel, OverlapVerifier
 from app.services.parsing import parse_document
 from app.services.retrieval import RetrievalEngine
 
@@ -109,6 +110,41 @@ class RetrievalAndVerificationTests(unittest.TestCase):
         verification = OverlapVerifier().verify(answer, [self.chunks[0]])
         self.assertIn("Hybrid retrieval", answer)
         self.assertGreaterEqual(verification.support_score, 0.5)
+
+    def test_ollama_chat_model_calls_local_chat_api(self) -> None:
+        class FakeResponse:
+            def __enter__(self):
+                return self
+
+            def __exit__(self, exc_type, exc, traceback):
+                return False
+
+            def read(self) -> bytes:
+                return b'{"message": {"content": "Hybrid retrieval combines dense retrieval and BM25."}}'
+
+        captured = {}
+
+        def fake_urlopen(request_obj, timeout):
+            captured["url"] = request_obj.full_url
+            captured["body"] = request_obj.data.decode("utf-8")
+            captured["timeout"] = timeout
+            return FakeResponse()
+
+        with patch("app.services.models.request.urlopen", side_effect=fake_urlopen):
+            answer = OllamaChatModel(
+                base_url="http://localhost:11434",
+                model="qwen2.5:0.5b",
+                timeout_seconds=45,
+            ).answer(
+                "Why use hybrid retrieval?",
+                [self.chunks[0]],
+                "Not found in the provided documents.",
+            )
+
+        self.assertEqual(captured["url"], "http://localhost:11434/api/chat")
+        self.assertIn('"model": "qwen2.5:0.5b"', captured["body"])
+        self.assertEqual(captured["timeout"], 45)
+        self.assertIn("Hybrid retrieval", answer)
 
 
 if __name__ == "__main__":

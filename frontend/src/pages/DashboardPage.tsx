@@ -1,6 +1,6 @@
 import { useState, type ChangeEvent } from "react";
 
-import type { DocumentRecord, HealthStatus, VersionComparison } from "../lib/api";
+import type { DocumentPreview, DocumentRecord, HealthStatus, VersionComparison } from "../lib/api";
 
 interface DashboardPageProps {
   documents: DocumentRecord[];
@@ -9,8 +9,10 @@ interface DashboardPageProps {
   onReindex: (documentId: string) => Promise<void>;
   onDelete: (document: DocumentRecord) => Promise<void>;
   onUpdateVisibility: (document: DocumentRecord, visibility: "private" | "public") => Promise<void>;
+  onPreviewDocument: (document: DocumentRecord) => Promise<void>;
   onComparePreviousVersion: (document: DocumentRecord) => Promise<void>;
   versionComparison: VersionComparison | null;
+  documentPreview: DocumentPreview | null;
 }
 
 export function DashboardPage({
@@ -20,10 +22,13 @@ export function DashboardPage({
   onReindex,
   onDelete,
   onUpdateVisibility,
+  onPreviewDocument,
   onComparePreviousVersion,
   versionComparison,
+  documentPreview,
 }: DashboardPageProps) {
   const [isUploading, setIsUploading] = useState(false);
+  const [previewingDocumentId, setPreviewingDocumentId] = useState("");
   const [error, setError] = useState("");
 
   const handleFileChange = async (event: ChangeEvent<HTMLInputElement>) => {
@@ -132,6 +137,23 @@ export function DashboardPage({
               >
                 Reindex
               </button>
+              <button
+                type="button"
+                className="secondary-button"
+                disabled={document.status !== "indexed" || previewingDocumentId === document.id}
+                onClick={() => {
+                  setPreviewingDocumentId(document.id);
+                  void onPreviewDocument(document)
+                    .catch((caughtError) => {
+                      setError(
+                        caughtError instanceof Error ? caughtError.message : "Document preview failed.",
+                      );
+                    })
+                    .finally(() => setPreviewingDocumentId(""));
+                }}
+              >
+                {previewingDocumentId === document.id ? "Inspecting..." : "Inspect Source"}
+              </button>
               {document.previous_version_id ? (
                 <button
                   type="button"
@@ -186,6 +208,46 @@ export function DashboardPage({
           ))}
         </div>
       </section>
+
+      {documentPreview ? (
+        <section className="panel">
+          <div className="panel-header">
+            <div>
+              <h3>Document Preview and Metadata</h3>
+              <p className="muted">
+                Source inspection for {documentPreview.document.filename} with extracted text, page sections, and chunk metadata.
+              </p>
+            </div>
+            <span className="panel-tag">{documentPreview.chunks.length} shown chunks</span>
+          </div>
+
+          <div className="metadata-grid preview-metadata">
+            <span>Content type: {documentPreview.document.content_type}</span>
+            <span>Pages: {documentPreview.document.page_count}</span>
+            <span>Indexed chunks: {documentPreview.document.chunk_count}</span>
+            <span>Approx. tokens: {documentPreview.total_tokens}</span>
+            <span>Checksum: {documentPreview.document.checksum}</span>
+            <span>Visibility: {documentPreview.document.visibility}</span>
+          </div>
+
+          <div className="source-preview-box">
+            <pre>{documentPreview.extracted_text || "No extracted text is available yet."}</pre>
+          </div>
+
+          <div className="chunk-preview-grid">
+            {documentPreview.chunks.map((chunk) => (
+              <article key={chunk.id} className="chunk-preview-card">
+                <div className="panel-header">
+                  <strong>Page {chunk.page}</strong>
+                  <span className="panel-tag">{chunk.token_count} tokens</span>
+                </div>
+                <p className="muted">{chunk.section}</p>
+                <p>{chunk.text}</p>
+              </article>
+            ))}
+          </div>
+        </section>
+      ) : null}
 
       {versionComparison ? (
         <section className="panel">

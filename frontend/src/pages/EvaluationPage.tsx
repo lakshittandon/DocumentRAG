@@ -9,6 +9,7 @@ interface EvaluationPageProps {
 
 const METRICS: Array<{ key: keyof EvaluationRun; label: string; format?: "percent" | "ms" | "number" }> = [
   { key: "recall_at_5", label: "Recall@5", format: "percent" },
+  { key: "ndcg_at_5", label: "nDCG@5", format: "number" },
   { key: "mrr", label: "MRR", format: "number" },
   { key: "answer_accuracy", label: "Answer Accuracy", format: "percent" },
   { key: "citation_correctness", label: "Citation Correctness", format: "percent" },
@@ -108,7 +109,7 @@ export function EvaluationPage({ runs, onRunEvaluation }: EvaluationPageProps) {
                   </div>
                   <p>{sample.question}</p>
                   <small>
-                    Recall@5 {sample.recall_at_5.toFixed(1)} / MRR {sample.reciprocal_rank.toFixed(3)} /
+                    Recall@5 {sample.recall_at_5.toFixed(1)} / nDCG@5 {sample.ndcg_at_5.toFixed(3)} / MRR {sample.reciprocal_rank.toFixed(3)} /
                     Citation {sample.citation_correct ? "correct" : "missing"} /
                     {sample.refused ? " refused" : " answered"}
                   </small>

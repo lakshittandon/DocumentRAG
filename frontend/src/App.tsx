@@ -7,6 +7,7 @@ import {
   isAuthExpiredError,
   type AuditLogEntry,
   type ConflictAnalysis,
+  type DocumentPreview,
   type DocumentRecord,
   type EvaluationRun,
   type HealthStatus,
@@ -30,6 +31,7 @@ export default function App() {
   const [health, setHealth] = useState<HealthStatus | null>(null);
   const [logs, setLogs] = useState<AuditLogEntry[]>([]);
   const [evaluationRuns, setEvaluationRuns] = useState<EvaluationRun[]>([]);
+  const [documentPreview, setDocumentPreview] = useState<DocumentPreview | null>(null);
   const [queryResult, setQueryResult] = useState<QueryResponse | null>(null);
   const [versionComparison, setVersionComparison] = useState<VersionComparison | null>(null);
   const [conflictAnalysis, setConflictAnalysis] = useState<ConflictAnalysis | null>(null);
@@ -121,11 +123,13 @@ export default function App() {
 
   const handleReindex = async (documentId: string) => {
     await api.reindexDocument(documentId, auth.accessToken);
+    setDocumentPreview(null);
     await loadAppData();
   };
 
   const handleDelete = async (document: DocumentRecord) => {
     await api.deleteDocument(document.id, auth.accessToken);
+    setDocumentPreview((current) => (current?.document.id === document.id ? null : current));
     setVersionComparison(null);
     setQueryResult((current) => {
       if (!current) {
@@ -141,6 +145,12 @@ export default function App() {
 
   const handleUpdateVisibility = async (document: DocumentRecord, visibility: "private" | "public") => {
     await api.updateDocumentPermissions(document.id, visibility, auth.accessToken);
+    await loadAppData();
+  };
+
+  const handlePreviewDocument = async (document: DocumentRecord) => {
+    const preview = await api.previewDocument(document.id, auth.accessToken);
+    setDocumentPreview(preview);
     await loadAppData();
   };
 
@@ -189,8 +199,10 @@ export default function App() {
           onReindex={handleReindex}
           onDelete={handleDelete}
           onUpdateVisibility={handleUpdateVisibility}
+          onPreviewDocument={handlePreviewDocument}
           onComparePreviousVersion={handleComparePreviousVersion}
           versionComparison={versionComparison}
+          documentPreview={documentPreview}
         />
       )}
 

@@ -57,6 +57,22 @@ class ChunkRecord:
 
 
 @dataclass(slots=True)
+class DocumentPreview:
+    document: DocumentRecord
+    chunks: list[ChunkRecord]
+    extracted_text: str
+    total_tokens: int
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "document": self.document.to_dict(),
+            "chunks": [chunk.to_dict() for chunk in self.chunks],
+            "extracted_text": self.extracted_text,
+            "total_tokens": self.total_tokens,
+        }
+
+
+@dataclass(slots=True)
 class RetrievalHit:
     chunk_id: str
     document_id: str
@@ -167,6 +183,7 @@ class EvaluationSampleResult:
     passed: bool
     refused: bool
     recall_at_5: float
+    ndcg_at_5: float
     reciprocal_rank: float
     citation_correct: bool
     latency_ms: float
@@ -180,6 +197,7 @@ class EvaluationRun:
     id: str
     sample_count: int
     recall_at_5: float
+    ndcg_at_5: float
     mrr: float
     answer_accuracy: float
     citation_correctness: float
@@ -196,6 +214,7 @@ class EvaluationRun:
             "id": self.id,
             "sample_count": self.sample_count,
             "recall_at_5": self.recall_at_5,
+            "ndcg_at_5": self.ndcg_at_5,
             "mrr": self.mrr,
             "answer_accuracy": self.answer_accuracy,
             "citation_correctness": self.citation_correctness,

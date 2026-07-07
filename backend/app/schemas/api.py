@@ -37,6 +37,24 @@ class DocumentResponse(BaseModel):
     updated_at: str
 
 
+class ChunkPreviewResponse(BaseModel):
+    id: str
+    document_id: str
+    document_name: str
+    text: str
+    page: int
+    section: str
+    token_count: int
+    source_path: str
+
+
+class DocumentPreviewResponse(BaseModel):
+    document: DocumentResponse
+    chunks: list[ChunkPreviewResponse]
+    extracted_text: str
+    total_tokens: int
+
+
 class ReindexResponse(BaseModel):
     message: str
     document: DocumentResponse
@@ -114,6 +132,7 @@ class EvaluationSampleResponse(BaseModel):
     passed: bool
     refused: bool
     recall_at_5: float
+    ndcg_at_5: float
     reciprocal_rank: float
     citation_correct: bool
     latency_ms: float
@@ -123,6 +142,7 @@ class EvaluationRunResponse(BaseModel):
     id: str
     sample_count: int
     recall_at_5: float
+    ndcg_at_5: float
     mrr: float
     answer_accuracy: float
     citation_correctness: float

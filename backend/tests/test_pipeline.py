@@ -98,8 +98,17 @@ class PipelineTests(unittest.TestCase):
     def test_evaluation_run_records_metrics(self) -> None:
         run = self.pipeline.run_evaluation(actor="tester")
         self.assertGreaterEqual(run.sample_count, 50)
+        self.assertGreaterEqual(run.ndcg_at_5, 0.0)
         self.assertGreaterEqual(run.refusal_accuracy, 0.0)
         self.assertEqual(len(self.pipeline.list_evaluation_runs()), 1)
+
+    def test_document_preview_returns_extracted_text_and_chunks(self) -> None:
+        document = self.pipeline.list_documents()[0]
+        preview = self.pipeline.preview_document(document.id, actor="admin", role="admin")
+        self.assertEqual(preview.document.id, document.id)
+        self.assertTrue(preview.chunks)
+        self.assertGreater(preview.total_tokens, 0)
+        self.assertIn("Reliable answers", preview.extracted_text)
 
     def test_document_permissions_can_be_updated(self) -> None:
         document = self.pipeline.list_documents()[0]

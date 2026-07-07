@@ -31,6 +31,9 @@ class Settings:
     gemini_embedding_model: str = "gemini-embedding-001"
     gemini_timeout_seconds: int = 30
     gemini_embedding_dimensions: int = 768
+    ollama_base_url: str = "http://localhost:11434"
+    ollama_model: str = "qwen2.5:0.5b"
+    ollama_timeout_seconds: int = 120
     max_upload_size_mb: int = 10
     database_url: str = ""
     enable_ocr: bool = True
@@ -68,6 +71,9 @@ def load_settings() -> Settings:
         gemini_embedding_model=os.getenv("GEMINI_EMBEDDING_MODEL", "gemini-embedding-001"),
         gemini_timeout_seconds=int(os.getenv("GEMINI_TIMEOUT_SECONDS", "30")),
         gemini_embedding_dimensions=int(os.getenv("GEMINI_EMBEDDING_DIMENSIONS", "768")),
+        ollama_base_url=os.getenv("OLLAMA_BASE_URL", "http://localhost:11434"),
+        ollama_model=os.getenv("OLLAMA_MODEL", "qwen2.5:0.5b"),
+        ollama_timeout_seconds=int(os.getenv("OLLAMA_TIMEOUT_SECONDS", "120")),
         max_upload_size_mb=int(os.getenv("MAX_UPLOAD_SIZE_MB", "10")),
         database_url=os.getenv("DATABASE_URL", ""),
         enable_ocr=os.getenv("ENABLE_OCR", "true").lower() in {"1", "true", "yes"},
