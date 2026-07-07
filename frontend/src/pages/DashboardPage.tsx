@@ -30,6 +30,11 @@ export function DashboardPage({
   const [isUploading, setIsUploading] = useState(false);
   const [previewingDocumentId, setPreviewingDocumentId] = useState("");
   const [error, setError] = useState("");
+  const ocrStatus = health
+    ? health.ocr_enabled
+      ? "enabled for scanned PDFs"
+      : "not available in this environment"
+    : "checking backend support";
 
   const handleFileChange = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -87,7 +92,7 @@ export function DashboardPage({
 
         <p className="muted">
           Maximum upload size: {health?.max_upload_size_mb ?? 10} MB. OCR is{" "}
-          {health?.ocr_enabled ? "enabled for scanned PDFs" : "disabled"}.
+          {ocrStatus}.
         </p>
 
         <label className="upload-zone">
