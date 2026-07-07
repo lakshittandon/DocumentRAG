@@ -11,7 +11,7 @@ interface AuthState {
 }
 
 function readStoredAuth(): AuthState | null {
-  const raw = localStorage.getItem(STORAGE_KEY);
+  const raw = sessionStorage.getItem(STORAGE_KEY);
   if (!raw) {
     return null;
   }
@@ -19,7 +19,7 @@ function readStoredAuth(): AuthState | null {
   try {
     return JSON.parse(raw) as AuthState;
   } catch {
-    localStorage.removeItem(STORAGE_KEY);
+    sessionStorage.removeItem(STORAGE_KEY);
     return null;
   }
 }
@@ -29,6 +29,7 @@ export function useAuth() {
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
+    localStorage.removeItem(STORAGE_KEY);
     setAuth(readStoredAuth());
     setIsReady(true);
   }, []);
@@ -39,7 +40,7 @@ export function useAuth() {
       username: response.username,
       role: response.role,
     };
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(nextState));
+    sessionStorage.setItem(STORAGE_KEY, JSON.stringify(nextState));
     setAuth(nextState);
   };
 
@@ -55,6 +56,7 @@ export function useAuth() {
 
   const logout = () => {
     localStorage.removeItem(STORAGE_KEY);
+    sessionStorage.removeItem(STORAGE_KEY);
     setAuth(null);
   };
 
