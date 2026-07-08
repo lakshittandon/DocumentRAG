@@ -1,11 +1,12 @@
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 
 import { CitationPanel } from "../components/CitationPanel";
-import type { QueryResponse } from "../lib/api";
+import type { HealthStatus, QueryModelProvider, QueryResponse } from "../lib/api";
 
 interface QueryPageProps {
+  health: HealthStatus | null;
   result: QueryResponse | null;
-  onSubmitQuestion: (question: string) => Promise<void>;
+  onSubmitQuestion: (question: string, modelProvider: QueryModelProvider) => Promise<void>;
 }
 
 const SUPPORT_LABELS: Record<string, string> = {
@@ -14,10 +15,41 @@ const SUPPORT_LABELS: Record<string, string> = {
   unsupported: "Unsupported",
 };
 
-export function QueryPage({ result, onSubmitQuestion }: QueryPageProps) {
+const DEFAULT_PROVIDERS: QueryModelProvider[] = ["gemini", "ollama"];
+
+const PROVIDER_OPTIONS: Array<{
+  value: QueryModelProvider;
+  label: string;
+  description: string;
+}> = [
+  {
+    value: "gemini",
+    label: "Gemini hosted",
+    description: "Best answer quality for the deployed demo.",
+  },
+  {
+    value: "ollama",
+    label: "Ollama / Qwen",
+    description: "Qwen answer mode through Ollama for privacy and cost comparison.",
+  },
+];
+
+export function QueryPage({ health, result, onSubmitQuestion }: QueryPageProps) {
   const [question, setQuestion] = useState("Which metrics are used to evaluate retrieval quality?");
+  const [modelProvider, setModelProvider] = useState<QueryModelProvider>("gemini");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const availableProviders = health?.available_model_providers ?? DEFAULT_PROVIDERS;
+
+  useEffect(() => {
+    if (availableProviders.includes(modelProvider)) {
+      return;
+    }
+    const fallback = PROVIDER_OPTIONS.find((option) => availableProviders.includes(option.value));
+    if (fallback) {
+      setModelProvider(fallback.value);
+    }
+  }, [availableProviders, modelProvider]);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -25,7 +57,10 @@ export function QueryPage({ result, onSubmitQuestion }: QueryPageProps) {
     setError("");
 
     try {
-      await onSubmitQuestion(question);
+      if (!availableProviders.includes(modelProvider)) {
+        throw new Error(`${modelProvider} is not configured on this deployment yet.`);
+      }
+      await onSubmitQuestion(question, modelProvider);
     } catch (caughtError) {
       setError(caughtError instanceof Error ? caughtError.message : "Query failed.");
     } finally {
@@ -56,6 +91,29 @@ export function QueryPage({ result, onSubmitQuestion }: QueryPageProps) {
             />
           </label>
 
+          <div className="query-controls">
+            <label className="field">
+              <span>Answer model</span>
+              <select
+                value={modelProvider}
+                onChange={(event) => setModelProvider(event.target.value as QueryModelProvider)}
+              >
+                {PROVIDER_OPTIONS.map((option) => {
+                  const isAvailable = availableProviders.includes(option.value);
+                  return (
+                    <option key={option.value} value={option.value} disabled={!isAvailable}>
+                      {option.label}
+                      {isAvailable ? "" : " (not configured)"}
+                    </option>
+                  );
+                })}
+              </select>
+            </label>
+            <p className="model-note">
+              Gemini is the hosted quality mode. Ollama/Qwen is the local or cloud privacy-cost comparison mode when configured.
+            </p>
+          </div>
+
           {error ? <p className="error-text">{error}</p> : null}
 
           <button className="primary-button" type="submit" disabled={isLoading}>
@@ -76,6 +134,10 @@ export function QueryPage({ result, onSubmitQuestion }: QueryPageProps) {
                 {result.refused ? "Refused" : "Answered"}
               </span>
               {result.guarded ? <span className="status-chip danger-chip">Prompt guard</span> : null}
+              <span className="status-chip">
+                {result.model_provider === "ollama" ? "Ollama/Qwen" : "Gemini"}
+                {result.generation_model ? `: ${result.generation_model}` : ""}
+              </span>
               <span className="status-chip">{result.latency_ms.toFixed(0)} ms</span>
               <span className="status-chip">{result.citations.length} citations</span>
             </div>

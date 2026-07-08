@@ -354,7 +354,15 @@ class RAGPipeline:
             total_tokens=sum(chunk.token_count for chunk in chunks),
         )
 
-    def query(self, question: str, actor: str, role: str = "admin") -> QueryResult:
+    def query(
+        self,
+        question: str,
+        actor: str,
+        role: str = "admin",
+        chat_model: ChatModel | None = None,
+        model_provider: str = "local",
+        generation_model: str = "",
+    ) -> QueryResult:
         with self._lock:
             accessible_documents = {
                 document.id
@@ -373,9 +381,11 @@ class RAGPipeline:
             actor=actor,
             retrieval_engine=scoped_engine,
             chunk_map=chunk_map,
-            chat_model=self.chat_model,
+            chat_model=chat_model or self.chat_model,
             verifier=self.verifier,
             audit_action="query.run",
+            model_provider=model_provider,
+            generation_model=generation_model,
         )
 
     def list_logs(self):
@@ -603,6 +613,8 @@ class RAGPipeline:
         chat_model: ChatModel,
         verifier: Verifier,
         audit_action: str | None,
+        model_provider: str = "local",
+        generation_model: str = "",
     ) -> QueryResult:
         started_at = time.perf_counter()
         guardrail = self.prompt_guard.check(question)
@@ -620,6 +632,8 @@ class RAGPipeline:
                 guarded=True,
                 retrieved_documents=[],
                 latency_ms=round((time.perf_counter() - started_at) * 1000, 2),
+                model_provider=model_provider,
+                generation_model=generation_model,
             )
             if audit_action:
                 self.audit_store.append(
@@ -631,6 +645,8 @@ class RAGPipeline:
                         "matched_pattern": guardrail.matched_pattern,
                         "refused": True,
                         "support_score": result.support_score,
+                        "model_provider": result.model_provider,
+                        "generation_model": result.generation_model,
                     },
                 )
             return result
@@ -688,6 +704,8 @@ class RAGPipeline:
             guarded=False,
             retrieved_documents=retrieved_documents,
             latency_ms=round((time.perf_counter() - started_at) * 1000, 2),
+            model_provider=model_provider,
+            generation_model=generation_model,
         )
         if audit_action:
             self.audit_store.append(
@@ -700,6 +718,8 @@ class RAGPipeline:
                     "retrieved_documents": result.retrieved_documents,
                     "latency_ms": result.latency_ms,
                     "citations": len(result.citations),
+                    "model_provider": result.model_provider,
+                    "generation_model": result.generation_model,
                 },
             )
         return result

@@ -124,6 +124,7 @@ def health(app_container=Depends(get_container)) -> HealthResponse:
         model_provider=app_container.settings.model_provider,
         generation_model=generation_model,
         embedding_model=embedding_model,
+        available_model_providers=app_container.available_query_providers(),
         max_upload_size_mb=app_container.settings.max_upload_size_mb,
         storage_backend="postgresql" if app_container.settings.database_url else "memory",
         ocr_enabled=app_container.settings.enable_ocr,
@@ -292,11 +293,18 @@ def run_query(
     current_user: UserAccount = Depends(get_current_user),
     app_container=Depends(get_container),
 ) -> QueryResponse:
-    result = app_container.pipeline.query(
-        payload.question,
-        actor=current_user.username,
-        role=current_user.role,
-    )
+    try:
+        chat_model, provider_name, generation_model = app_container.get_query_chat_model(payload.model_provider)
+        result = app_container.pipeline.query(
+            payload.question,
+            actor=current_user.username,
+            role=current_user.role,
+            chat_model=chat_model,
+            model_provider=provider_name,
+            generation_model=generation_model,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
     return _map_query(result)
 
 

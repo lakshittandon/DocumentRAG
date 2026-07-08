@@ -162,6 +162,7 @@ class RetrievalAndVerificationTests(unittest.TestCase):
         def fake_urlopen(request_obj, timeout):
             captured["url"] = request_obj.full_url
             captured["body"] = request_obj.data.decode("utf-8")
+            captured["authorization"] = request_obj.headers.get("Authorization")
             captured["timeout"] = timeout
             return FakeResponse()
 
@@ -178,8 +179,45 @@ class RetrievalAndVerificationTests(unittest.TestCase):
 
         self.assertEqual(captured["url"], "http://localhost:11434/api/chat")
         self.assertIn('"model": "qwen2.5:0.5b"', captured["body"])
+        self.assertIsNone(captured["authorization"])
         self.assertEqual(captured["timeout"], 45)
         self.assertIn("Hybrid retrieval", answer)
+
+    def test_ollama_cloud_chat_model_sends_bearer_token(self) -> None:
+        class FakeResponse:
+            def __enter__(self):
+                return self
+
+            def __exit__(self, exc_type, exc, traceback):
+                return False
+
+            def read(self) -> bytes:
+                return b'{"message": {"content": "Cloud Qwen answered from evidence."}}'
+
+        captured = {}
+
+        def fake_urlopen(request_obj, timeout):
+            captured["url"] = request_obj.full_url
+            captured["authorization"] = request_obj.headers.get("Authorization")
+            captured["timeout"] = timeout
+            return FakeResponse()
+
+        with patch("app.services.models.request.urlopen", side_effect=fake_urlopen):
+            answer = OllamaChatModel(
+                base_url="https://ollama.com",
+                model="qwen2.5:0.5b",
+                timeout_seconds=90,
+                api_key="ollama-test-key",
+            ).answer(
+                "What does hybrid retrieval combine?",
+                [self.chunks[0]],
+                "Not found in the provided documents.",
+            )
+
+        self.assertEqual(captured["url"], "https://ollama.com/api/chat")
+        self.assertEqual(captured["authorization"], "Bearer ollama-test-key")
+        self.assertEqual(captured["timeout"], 90)
+        self.assertIn("Cloud Qwen", answer)
 
 
 if __name__ == "__main__":

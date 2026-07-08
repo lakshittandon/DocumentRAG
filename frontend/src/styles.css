@@ -111,11 +111,16 @@ button {
 }
 
 .field input,
-.field textarea {
+.field textarea,
+.field select {
   border: 1px solid #cbd5e1;
   border-radius: 16px;
   padding: 14px 16px;
   background: rgba(255, 255, 255, 0.88);
+}
+
+.field select {
+  color: #102a43;
 }
 
 .primary-button,
@@ -329,6 +334,25 @@ button {
   flex-wrap: wrap;
   gap: 10px;
   margin: 12px 0;
+}
+
+.query-controls {
+  display: grid;
+  grid-template-columns: minmax(220px, 0.45fr) 1fr;
+  gap: 14px;
+  align-items: end;
+}
+
+.model-note {
+  margin: 0 0 4px;
+  color: #627d98;
+  font-size: 0.92rem;
+}
+
+@media (max-width: 720px) {
+  .query-controls {
+    grid-template-columns: 1fr;
+  }
 }
 
 .claim-list {

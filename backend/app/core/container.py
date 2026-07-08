@@ -44,6 +44,50 @@ class AppContainer:
     def startup(self) -> None:
         self.pipeline.bootstrap()
 
+    def available_query_providers(self) -> list[str]:
+        providers: list[str] = []
+        if self.settings.gemini_api_key:
+            providers.append("gemini")
+
+        if self.settings.ollama_base_url and (
+            not self._uses_ollama_cloud() or bool(self.settings.ollama_api_key)
+        ):
+            providers.append("ollama")
+
+        return providers
+
+    def get_query_chat_model(self, provider: str):
+        normalized_provider = provider.strip().lower()
+        if normalized_provider == "gemini":
+            if not self.settings.gemini_api_key:
+                raise ValueError("Gemini is not configured. Add GEMINI_API_KEY to use Gemini answers.")
+            return (
+                GeminiChatModel(
+                    api_key=self.settings.gemini_api_key,
+                    api_base_url=self.settings.gemini_api_base_url,
+                    model=self.settings.gemini_generation_model,
+                    timeout_seconds=self.settings.gemini_timeout_seconds,
+                ),
+                "gemini",
+                self.settings.gemini_generation_model,
+            )
+
+        if normalized_provider == "ollama":
+            if self._uses_ollama_cloud() and not self.settings.ollama_api_key:
+                raise ValueError("Ollama Cloud is not configured. Add OLLAMA_API_KEY to use Ollama/Qwen answers.")
+            return (
+                OllamaChatModel(
+                    base_url=self.settings.ollama_base_url,
+                    model=self.settings.ollama_model,
+                    timeout_seconds=self.settings.ollama_timeout_seconds,
+                    api_key=self.settings.ollama_api_key,
+                ),
+                "ollama",
+                self.settings.ollama_model,
+            )
+
+        raise ValueError("Unsupported model provider. Choose 'gemini' or 'ollama'.")
+
     def _build_model_stack(self):
         if self.settings.model_provider == "local":
             return HashedEmbeddingModel(), HeuristicChatModel(), OverlapVerifier()
@@ -77,6 +121,7 @@ class AppContainer:
                     base_url=self.settings.ollama_base_url,
                     model=self.settings.ollama_model,
                     timeout_seconds=self.settings.ollama_timeout_seconds,
+                    api_key=self.settings.ollama_api_key,
                 ),
                 OverlapVerifier(),
             )
@@ -93,6 +138,9 @@ class AppContainer:
                 PostgresUserStore(self.settings.database_url),
             )
         return KnowledgeBaseStore(), AuditLogStore(), UserStore()
+
+    def _uses_ollama_cloud(self) -> bool:
+        return self.settings.ollama_base_url.rstrip("/").lower().startswith("https://ollama.com")
 
 
 container = AppContainer()

@@ -53,12 +53,15 @@ class OllamaAPIError(RuntimeError):
     pass
 
 
-def _post_json(endpoint: str, payload: dict, timeout_seconds: int) -> dict:
+def _post_json(endpoint: str, payload: dict, timeout_seconds: int, headers: dict[str, str] | None = None) -> dict:
     body = json.dumps(payload).encode("utf-8")
+    request_headers = {"Content-Type": "application/json"}
+    if headers:
+        request_headers.update(headers)
     http_request = request.Request(
         endpoint,
         data=body,
-        headers={"Content-Type": "application/json"},
+        headers=request_headers,
         method="POST",
     )
     with request.urlopen(http_request, timeout=timeout_seconds) as response:
@@ -229,6 +232,7 @@ class OllamaChatModel:
     model: str = "qwen2.5:0.5b"
     timeout_seconds: int = 120
     temperature: float = 0.2
+    api_key: str = ""
 
     def answer(self, question: str, contexts: list[ChunkRecord], refusal_text: str) -> str:
         if not contexts:
@@ -278,9 +282,11 @@ class OllamaChatModel:
             "options": {"temperature": self.temperature},
         }
 
-        endpoint = f"{self.base_url.rstrip('/')}/api/chat"
+        base_url = self.base_url.rstrip("/")
+        endpoint = f"{base_url}/chat" if base_url.endswith("/api") else f"{base_url}/api/chat"
+        headers = {"Authorization": f"Bearer {self.api_key}"} if self.api_key else None
         try:
-            response_payload = _post_json(endpoint, payload, self.timeout_seconds)
+            response_payload = _post_json(endpoint, payload, self.timeout_seconds, headers=headers)
         except error.HTTPError as exc:
             detail = exc.read().decode("utf-8", errors="replace")
             raise OllamaAPIError(f"Ollama API request failed with HTTP {exc.code}: {detail}") from exc

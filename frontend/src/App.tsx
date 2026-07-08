@@ -12,6 +12,7 @@ import {
   type EvaluationRun,
   type HealthStatus,
   type QueryResponse,
+  type QueryModelProvider,
   type VersionComparison,
 } from "./lib/api";
 import { AnalysisPage } from "./pages/AnalysisPage";
@@ -133,8 +134,8 @@ export default function App() {
     await loadAppData();
   };
 
-  const handleQuery = async (question: string) => {
-    const result = await api.query(question, auth.accessToken);
+  const handleQuery = async (question: string, modelProvider: QueryModelProvider) => {
+    const result = await api.query(question, modelProvider, auth.accessToken);
     setQueryResult(result);
     await loadAppData();
   };
@@ -186,7 +187,7 @@ export default function App() {
       )}
 
       {activeView === "query" && (
-        <QueryPage result={queryResult} onSubmitQuestion={handleQuery} />
+        <QueryPage health={health} result={queryResult} onSubmitQuestion={handleQuery} />
       )}
 
       {activeView === "analysis" && (

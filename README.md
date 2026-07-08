@@ -16,7 +16,7 @@ This repository contains a full-stack final year project for a reliable Retrieva
 - OCR fallback for scanned PDFs when Tesseract is available
 - Docker/Render deployment from one public service
 - Gemini-powered generation and embeddings through the Gemini API free tier
-- Real Ollama local generation mode for privacy/cost comparison
+- Query-time answer model toggle between Gemini hosted generation and Ollama/Qwen generation
 
 ## Repository Layout
 
@@ -39,7 +39,9 @@ pip install -e .[dev]
 uvicorn app.main:app --reload
 ```
 
-Copy `.env.example` to `.env` at the repo root and set `GEMINI_API_KEY` before starting the backend if you want the real Gemini integration. The hosted Gemini default is `gemini-2.5-flash-lite`. Set `MODEL_PROVIDER=local` to stay on the deterministic offline fallback adapters. Set `MODEL_PROVIDER=ollama` with `OLLAMA_MODEL=qwen2.5:0.5b` to use the real local Ollama chat model through `OLLAMA_BASE_URL`.
+Copy `.env.example` to `.env` at the repo root and set `GEMINI_API_KEY` before starting the backend if you want the real Gemini integration. The hosted Gemini default is `gemini-2.5-flash-lite`. Set `MODEL_PROVIDER=local` to stay on the deterministic offline fallback adapters. The Query Studio screen can switch answer generation between Gemini and Ollama/Qwen per question when both providers are configured.
+
+For local Ollama, use `OLLAMA_BASE_URL=http://localhost:11434` and leave `OLLAMA_API_KEY` empty. For Ollama Cloud, use `OLLAMA_BASE_URL=https://ollama.com` and set `OLLAMA_API_KEY` to an API key from your Ollama account.
 The default upload limit is `10 MB` to avoid long synchronous indexing delays on very large PDFs.
 Set `DATABASE_URL` to use PostgreSQL persistence for documents, chunks, audit logs, and original uploaded files; otherwise the app falls back to in-memory stores.
 
@@ -71,6 +73,7 @@ The deployment image:
 - stores documents, chunks, audit logs, and uploaded file bytes in Render PostgreSQL when `DATABASE_URL` is present
 - uses `/app/data/uploads` as an ephemeral working cache that can be restored from PostgreSQL for reindexing
 - keeps the user corpus empty by default
+- can run hosted Gemini by default and expose a Query Studio toggle for hosted Qwen through Ollama Cloud with `OLLAMA_BASE_URL=https://ollama.com`, `OLLAMA_MODEL=qwen2.5:0.5b`, and `OLLAMA_API_KEY`
 
 ## Login And Registration
 
@@ -82,7 +85,7 @@ The hosted demo opens on a real login/register screen. New users can create thei
 ## What Is Already Implemented
 
 - Document upload, async ingestion, chunking, indexing, query, logging, evaluation, version comparison, and conflict-analysis routes
-- Provider-agnostic model interfaces with Gemini adapters, a real Ollama chat adapter, and deterministic local fallback adapters
+- Provider-agnostic model interfaces with Gemini adapters, a real Ollama chat adapter, deterministic local fallback adapters, and a per-query frontend model selector
 - React demo screens for corpus management, source inspection, querying, analysis, evaluation, and logs
 - Empty hosted corpus by default, plus Gemini-ready configuration for immediate local testing
 - Project-plan source document and export script for `.docx`

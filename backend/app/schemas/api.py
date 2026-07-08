@@ -77,6 +77,7 @@ class UpdateDocumentPermissionsRequest(BaseModel):
 
 class QueryRequest(BaseModel):
     question: str = Field(min_length=3)
+    model_provider: str = Field(default="gemini", pattern="^(gemini|ollama)$")
 
 
 class RetrievalHitResponse(BaseModel):
@@ -127,6 +128,8 @@ class QueryResponse(BaseModel):
     guarded: bool = False
     retrieved_documents: list[str] = []
     latency_ms: float = 0.0
+    model_provider: str = "local"
+    generation_model: str = ""
 
 
 class EvaluationSampleResponse(BaseModel):
@@ -217,6 +220,7 @@ class HealthResponse(BaseModel):
     model_provider: str
     generation_model: str
     embedding_model: str
+    available_model_providers: list[str] = []
     max_upload_size_mb: int
     storage_backend: str
     ocr_enabled: bool

@@ -79,6 +79,8 @@ export interface SentenceSupport {
   reason?: string | null;
 }
 
+export type QueryModelProvider = "gemini" | "ollama";
+
 export interface QueryResponse {
   answer: string;
   citations: Citation[];
@@ -91,6 +93,8 @@ export interface QueryResponse {
   guarded: boolean;
   retrieved_documents: string[];
   latency_ms: number;
+  model_provider: QueryModelProvider | string;
+  generation_model: string;
 }
 
 export interface AuditLogEntry {
@@ -181,6 +185,7 @@ export interface HealthStatus {
   model_provider: string;
   generation_model: string;
   embedding_model: string;
+  available_model_providers: QueryModelProvider[];
   max_upload_size_mb: number;
   storage_backend: string;
   ocr_enabled: boolean;
@@ -305,12 +310,12 @@ export const api = {
       token,
     ),
 
-  query: (question: string, token: string) =>
+  query: (question: string, modelProvider: QueryModelProvider, token: string) =>
     request<QueryResponse>(
       "/query",
       {
         method: "POST",
-        body: JSON.stringify({ question }),
+        body: JSON.stringify({ question, model_provider: modelProvider }),
       },
       token,
     ),

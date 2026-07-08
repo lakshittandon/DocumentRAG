@@ -156,6 +156,8 @@ class QueryResult:
     guarded: bool = False
     retrieved_documents: list[str] = field(default_factory=list)
     latency_ms: float = 0.0
+    model_provider: str = "local"
+    generation_model: str = ""
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -170,6 +172,8 @@ class QueryResult:
             "guarded": self.guarded,
             "retrieved_documents": self.retrieved_documents,
             "latency_ms": self.latency_ms,
+            "model_provider": self.model_provider,
+            "generation_model": self.generation_model,
         }
 
 

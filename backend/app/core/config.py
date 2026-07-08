@@ -34,6 +34,7 @@ class Settings:
     ollama_base_url: str = "http://localhost:11434"
     ollama_model: str = "qwen2.5:0.5b"
     ollama_timeout_seconds: int = 120
+    ollama_api_key: str = ""
     max_upload_size_mb: int = 10
     database_url: str = ""
     enable_ocr: bool = True
@@ -74,6 +75,7 @@ def load_settings() -> Settings:
         ollama_base_url=os.getenv("OLLAMA_BASE_URL", "http://localhost:11434"),
         ollama_model=os.getenv("OLLAMA_MODEL", "qwen2.5:0.5b"),
         ollama_timeout_seconds=int(os.getenv("OLLAMA_TIMEOUT_SECONDS", "120")),
+        ollama_api_key=os.getenv("OLLAMA_API_KEY", ""),
         max_upload_size_mb=int(os.getenv("MAX_UPLOAD_SIZE_MB", "10")),
         database_url=os.getenv("DATABASE_URL", ""),
         enable_ocr=os.getenv("ENABLE_OCR", "true").lower() in {"1", "true", "yes"},

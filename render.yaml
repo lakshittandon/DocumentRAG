@@ -26,6 +26,14 @@ services:
         value: "30"
       - key: GEMINI_EMBEDDING_DIMENSIONS
         value: "768"
+      - key: OLLAMA_BASE_URL
+        value: https://ollama.com
+      - key: OLLAMA_MODEL
+        value: qwen2.5:0.5b
+      - key: OLLAMA_TIMEOUT_SECONDS
+        value: "120"
+      - key: OLLAMA_API_KEY
+        sync: false
       - key: MAX_UPLOAD_SIZE_MB
         value: "10"
       - key: CORPUS_DIR
