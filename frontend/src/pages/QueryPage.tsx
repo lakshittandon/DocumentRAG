@@ -40,6 +40,7 @@ export function QueryPage({ health, result, onSubmitQuestion }: QueryPageProps) 
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const availableProviders = health?.available_model_providers ?? DEFAULT_PROVIDERS;
+  const isOllamaAvailable = availableProviders.includes("ollama");
 
   useEffect(() => {
     if (availableProviders.includes(modelProvider)) {
@@ -110,7 +111,9 @@ export function QueryPage({ health, result, onSubmitQuestion }: QueryPageProps) 
               </select>
             </label>
             <p className="model-note">
-              Gemini is the hosted quality mode. Ollama/Qwen is the local or cloud privacy-cost comparison mode when configured.
+              {isOllamaAvailable
+                ? "Gemini is the hosted quality mode. Ollama/Qwen is available for privacy-cost comparison."
+                : "Ollama/Qwen is disabled until OLLAMA_API_KEY is added in Render. Gemini is ready for hosted answers."}
             </p>
           </div>
 
