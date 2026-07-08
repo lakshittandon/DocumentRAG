@@ -313,8 +313,6 @@ def list_logs(
     current_user: UserAccount = Depends(get_current_user),
     app_container=Depends(get_container),
 ) -> list[AuditLogResponse]:
-    if current_user.role != "admin":
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin access required.")
     return [_map_log(entry) for entry in app_container.pipeline.list_logs()]
 
 
@@ -332,8 +330,6 @@ def list_evaluations(
     current_user: UserAccount = Depends(get_current_user),
     app_container=Depends(get_container),
 ) -> list[EvaluationRunResponse]:
-    if current_user.role != "admin":
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin access required.")
     return [_map_evaluation(run) for run in app_container.pipeline.list_evaluation_runs()]
 
 

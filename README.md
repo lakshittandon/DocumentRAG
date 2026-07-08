@@ -77,7 +77,7 @@ The deployment image:
 
 ## Login And Registration
 
-The hosted demo opens on a real login/register screen. New users can create their own account, while the built-in admin account remains available from the `Use Demo Admin` button for quick evaluation.
+The hosted demo opens on a real login/register screen. New users can create their own account, while the built-in demo account remains available from the `Use Demo Account` button for quick evaluation.
 
 - Demo admin username: `admin`
 - Demo admin password: `admin123`

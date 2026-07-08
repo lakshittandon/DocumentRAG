@@ -52,7 +52,7 @@ export function LoginPage({ onLogin, onRegister, onDemoLogin }: LoginPageProps) 
         <p className="eyebrow">Document Intelligence Platform</p>
         <h1>Reliable RAG Demo Console</h1>
         <p className="login-copy">
-          Create your own account to test private document access, or use the demo admin account for a quick guided walkthrough.
+          Create your own demo account to test the full platform, or use the preloaded demo account for a quick guided walkthrough.
         </p>
 
         <div className="auth-toggle">
@@ -135,7 +135,7 @@ export function LoginPage({ onLogin, onRegister, onDemoLogin }: LoginPageProps) 
             disabled={isSubmitting}
             onClick={handleDemoLogin}
           >
-            Use Demo Admin
+            Use Demo Account
           </button>
         </form>
       </div>

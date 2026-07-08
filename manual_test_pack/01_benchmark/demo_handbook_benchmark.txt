@@ -1,0 +1,29 @@
+# Reliable RAG Demo Handbook
+
+## Project Identity
+
+Reliable RAG Platform is a trustworthy document intelligence system built by Lakshit Tandon, registration number 220905506, under the internal guidance of Dr. Manjula K. Shenoy. The public deployment URL is https://reliable-rag-platform.onrender.com.
+
+## Supported Files and Upload Limits
+
+Version 1 supports PDF, TXT, and Markdown-like text files. Text-based PDFs are supported. Scanned PDFs are supported through OCR fallback when OCR tooling is available, but scanned OCR quality may vary because image-only pages require OCR. The maximum upload size is 10 MB. Files larger than the upload limit are rejected, and the user should split the PDF into smaller documents.
+
+## Architecture
+
+The backend framework is FastAPI. The frontend technology is React with TypeScript. The deployed prototype uses Gemini as the hosted model provider, including Gemini Flash Lite for answer generation and Gemini embeddings for semantic retrieval. The current backend demo can also run with in-memory storage for local testing, while PostgreSQL is used for persistent hosted storage. The backend architecture style is a modular monolith. Important backend modules include routes, schemas, storage, parsing, chunking, retrieval, models, verification, and audit logging. FastAPI is used because it provides REST APIs, request validation, and clear schema contracts. The model provider can be changed later because the system uses provider-agnostic adapters.
+
+## Ingestion
+
+When a user uploads a document, the backend stores the file, computes a SHA-256 checksum, checks for duplicate content, parses the text, creates chunks, attaches metadata, and updates the retrieval index. Each chunk contains document name, page number, section name, chunk id, and token count. The frontend can show processing, indexed, and failed statuses during upload processing. Upload processing runs asynchronously in the background so the user does not wait for long indexing work. Duplicate content is detected with checksum comparison. Chunk metadata is important because citations need document, page, and section information. Text formats supported besides PDF include TXT and Markdown.
+
+## Retrieval
+
+The intended production flow uses dense retrieval and BM25 keyword retrieval. Dense retrieval finds semantically similar chunks. BM25 finds keyword and exact lexical matches. Reciprocal Rank Fusion combines dense and BM25 ranked lists. The reranking step selects the strongest evidence chunks. The answer generator should receive the top evidence chunks only and should not answer from memory. The system is more trustworthy than a plain chatbot because answers are traced to retrieved evidence.
+
+## Generation and Trust
+
+Every factual answer should include citations. A citation should mention document, page, section, and snippet evidence. The exact refusal sentence is: Not found in the provided documents. The assistant should refuse when evidence is weak, unrelated, or missing. The platform should not invent missing values. If project budget is not mentioned, the platform should not create a fake budget value.
+
+## Frontend
+
+The Corpus dashboard is used for uploading, previewing, reindexing, permission updates, and deleting documents. Query Studio is used for asking grounded questions. Audit Trail shows uploads, deletions, queries, evaluation events, and security events. The login screen is simplified demo authentication, not complete production authentication. Document preview and metadata help users inspect uploaded documents and chunks.
