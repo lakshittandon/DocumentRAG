@@ -6,18 +6,21 @@ interface ShellProps extends PropsWithChildren {
   activeView: AppView;
   onChangeView: (view: AppView) => void;
   username?: string;
+  role?: string;
   onLogout?: () => void;
 }
 
-const VIEWS: Array<{ id: AppView; label: string }> = [
+const VIEWS: Array<{ id: AppView; label: string; adminOnly?: boolean }> = [
   { id: "dashboard", label: "Corpus" },
   { id: "query", label: "Query Studio" },
   { id: "analysis", label: "Analysis Lab" },
-  { id: "evaluation", label: "Evaluation Lab" },
+  { id: "evaluation", label: "Evaluation Lab", adminOnly: true },
   { id: "logs", label: "Audit Trail" },
 ];
 
-export function Shell({ activeView, onChangeView, onLogout, username, children }: ShellProps) {
+export function Shell({ activeView, onChangeView, onLogout, username, role, children }: ShellProps) {
+  const visibleViews = VIEWS.filter((view) => !view.adminOnly || role === "admin");
+
   return (
     <div className="app-shell">
       <aside className="sidebar">
@@ -29,7 +32,7 @@ export function Shell({ activeView, onChangeView, onLogout, username, children }
         </div>
 
         <nav className="nav-list">
-          {VIEWS.map((view) => (
+          {visibleViews.map((view) => (
             <button
               key={view.id}
               className={view.id === activeView ? "nav-button active" : "nav-button"}

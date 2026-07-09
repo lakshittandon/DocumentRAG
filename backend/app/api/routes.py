@@ -77,6 +77,14 @@ def get_current_user(
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(exc)) from exc
 
 
+def require_admin(current_user: UserAccount) -> None:
+    if current_user.role != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Admin access required.",
+        )
+
+
 @router.post("/auth/login", response_model=TokenResponse)
 def login(payload: LoginRequest, app_container=Depends(get_container)) -> TokenResponse:
     username = payload.username.strip().lower()
@@ -322,6 +330,7 @@ def run_evaluation(
     current_user: UserAccount = Depends(get_current_user),
     app_container=Depends(get_container),
 ) -> EvaluationRunResponse:
+    require_admin(current_user)
     run = app_container.pipeline.run_evaluation(
         actor=current_user.username,
         sample_limit=sample_limit or app_container.settings.evaluation_sample_limit,
@@ -334,6 +343,7 @@ def list_evaluations(
     current_user: UserAccount = Depends(get_current_user),
     app_container=Depends(get_container),
 ) -> list[EvaluationRunResponse]:
+    require_admin(current_user)
     return [_map_evaluation(run) for run in app_container.pipeline.list_evaluation_runs()]
 
 

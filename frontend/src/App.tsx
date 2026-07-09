@@ -45,11 +45,12 @@ export default function App() {
 
     setGlobalError("");
     try {
+      const isAdmin = auth.role === "admin";
       const [healthResponse, documentsResponse, logResponse, evaluationsResponse] = await Promise.all([
         api.health(),
         api.listDocuments(auth.accessToken),
         api.listLogs(auth.accessToken),
-        api.listEvaluations(auth.accessToken),
+        isAdmin ? api.listEvaluations(auth.accessToken) : Promise.resolve([]),
       ]);
       setHealth(healthResponse);
       setDocuments(documentsResponse);
@@ -69,6 +70,12 @@ export default function App() {
       void loadAppData();
     }
   }, [isAuthenticated, auth?.accessToken]);
+
+  useEffect(() => {
+    if (auth?.role !== "admin" && activeView === "evaluation") {
+      setActiveView("dashboard");
+    }
+  }, [activeView, auth?.role]);
 
   useEffect(() => {
     if (!isAuthenticated || documents.every((document) => document.status !== "processing")) {
@@ -168,6 +175,9 @@ export default function App() {
     <Shell
       activeView={activeView}
       onChangeView={setActiveView}
+      username={auth.username}
+      role={auth.role}
+      onLogout={logout}
     >
       {globalError ? <p className="error-banner">{globalError}</p> : null}
 
@@ -194,7 +204,7 @@ export default function App() {
         <AnalysisPage analysis={conflictAnalysis} onAnalyzeConflicts={handleAnalyzeConflicts} />
       )}
 
-      {activeView === "evaluation" && (
+      {auth.role === "admin" && activeView === "evaluation" && (
         <EvaluationPage runs={evaluationRuns} onRunEvaluation={handleRunEvaluation} />
       )}
 
