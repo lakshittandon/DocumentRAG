@@ -153,7 +153,7 @@ class GeminiEmbeddingModel:
 class GeminiChatModel:
     api_key: str
     api_base_url: str
-    model: str = "gemini-2.5-flash-lite"
+    model: str = "gemini-3.1-flash-lite"
     timeout_seconds: int = 30
     temperature: float = 0.2
 

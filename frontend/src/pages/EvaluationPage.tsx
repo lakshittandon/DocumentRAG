@@ -56,8 +56,8 @@ export function EvaluationPage({ runs, onRunEvaluation }: EvaluationPageProps) {
           <p className="eyebrow">Evaluation Lab</p>
           <h2>Benchmark the current retrieval and answer pipeline</h2>
           <p>
-            Runs a fixed demo benchmark against the currently uploaded corpus and reports retrieval,
-            citation, refusal, latency, and hallucination signals.
+            Runs a fixed demo benchmark subset against the currently uploaded corpus and reports retrieval,
+            citation, refusal, latency, and hallucination signals without exhausting hosted model limits.
           </p>
         </div>
       </section>
@@ -68,8 +68,8 @@ export function EvaluationPage({ runs, onRunEvaluation }: EvaluationPageProps) {
           <span className="panel-tag">{runs.length} runs</span>
         </div>
         <p className="muted">
-          For meaningful factual scores, upload the demo handbook first. Empty or unrelated corpora should
-          score low, which is expected and honest.
+          Hosted runs use a smaller default sample set for Gemini rate limits. For deeper report runs,
+          call the API with a larger sample_limit locally or after increasing provider quota.
         </p>
         {error ? <p className="error-text">{error}</p> : null}
         <button className="primary-button" type="button" onClick={handleRun} disabled={isRunning}>

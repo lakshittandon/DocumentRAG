@@ -27,7 +27,7 @@ class Settings:
     model_provider: str = "local"
     gemini_api_key: str = ""
     gemini_api_base_url: str = "https://generativelanguage.googleapis.com/v1beta"
-    gemini_generation_model: str = "gemini-2.5-flash-lite"
+    gemini_generation_model: str = "gemini-3.1-flash-lite"
     gemini_embedding_model: str = "gemini-embedding-001"
     gemini_timeout_seconds: int = 30
     gemini_embedding_dimensions: int = 768
@@ -39,6 +39,7 @@ class Settings:
     database_url: str = ""
     enable_ocr: bool = True
     ocr_language: str = "eng"
+    evaluation_sample_limit: int = 8
 
     def ensure_directories(self) -> None:
         self.upload_dir.mkdir(parents=True, exist_ok=True)
@@ -68,7 +69,7 @@ def load_settings() -> Settings:
         gemini_api_base_url=os.getenv(
             "GEMINI_API_BASE_URL", "https://generativelanguage.googleapis.com/v1beta"
         ),
-        gemini_generation_model=os.getenv("GEMINI_GENERATION_MODEL", "gemini-2.5-flash-lite"),
+        gemini_generation_model=os.getenv("GEMINI_GENERATION_MODEL", "gemini-3.1-flash-lite"),
         gemini_embedding_model=os.getenv("GEMINI_EMBEDDING_MODEL", "gemini-embedding-001"),
         gemini_timeout_seconds=int(os.getenv("GEMINI_TIMEOUT_SECONDS", "30")),
         gemini_embedding_dimensions=int(os.getenv("GEMINI_EMBEDDING_DIMENSIONS", "768")),
@@ -80,6 +81,7 @@ def load_settings() -> Settings:
         database_url=os.getenv("DATABASE_URL", ""),
         enable_ocr=os.getenv("ENABLE_OCR", "true").lower() in {"1", "true", "yes"},
         ocr_language=os.getenv("OCR_LANGUAGE", "eng"),
+        evaluation_sample_limit=int(os.getenv("EVALUATION_SAMPLE_LIMIT", "8")),
     )
 
 

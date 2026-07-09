@@ -39,7 +39,7 @@ pip install -e .[dev]
 uvicorn app.main:app --reload
 ```
 
-Copy `.env.example` to `.env` at the repo root and set `GEMINI_API_KEY` before starting the backend if you want the real Gemini integration. The hosted Gemini default is `gemini-2.5-flash-lite`. Set `MODEL_PROVIDER=local` to stay on the deterministic offline fallback adapters. The Query Studio screen can switch answer generation between Gemini and Ollama/Qwen per question when both providers are configured.
+Copy `.env.example` to `.env` at the repo root and set `GEMINI_API_KEY` before starting the backend if you want the real Gemini integration. The hosted Gemini default is `gemini-3.1-flash-lite`. Set `MODEL_PROVIDER=local` to stay on the deterministic offline fallback adapters. The Query Studio screen can switch answer generation between Gemini and Ollama/Qwen per question when both providers are configured.
 
 For local Ollama, use `OLLAMA_BASE_URL=http://localhost:11434` and leave `OLLAMA_API_KEY` empty. For Ollama Cloud, use `OLLAMA_BASE_URL=https://ollama.com` and set `OLLAMA_API_KEY` to an API key from your Ollama account.
 The default upload limit is `10 MB` to avoid long synchronous indexing delays on very large PDFs.

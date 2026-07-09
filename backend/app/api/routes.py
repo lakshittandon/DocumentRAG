@@ -4,7 +4,7 @@ from pathlib import Path
 import shutil
 import time
 
-from fastapi import APIRouter, Depends, File, HTTPException, Security, UploadFile, status
+from fastapi import APIRouter, Depends, File, HTTPException, Query, Security, UploadFile, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from app.core.container import container
@@ -318,10 +318,14 @@ def list_logs(
 
 @router.post("/evaluations/run", response_model=EvaluationRunResponse)
 def run_evaluation(
+    sample_limit: int | None = Query(default=None, ge=1, le=100),
     current_user: UserAccount = Depends(get_current_user),
     app_container=Depends(get_container),
 ) -> EvaluationRunResponse:
-    run = app_container.pipeline.run_evaluation(actor=current_user.username)
+    run = app_container.pipeline.run_evaluation(
+        actor=current_user.username,
+        sample_limit=sample_limit or app_container.settings.evaluation_sample_limit,
+    )
     return _map_evaluation(run)
 
 
