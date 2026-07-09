@@ -508,7 +508,7 @@ class RAGPipeline:
     def run_evaluation(self, actor: str, sample_limit: int | None = None) -> EvaluationRun:
         benchmark = self._benchmark_samples()
         if sample_limit is not None:
-            benchmark = benchmark[:sample_limit]
+            benchmark = self._select_benchmark_samples(benchmark, sample_limit)
 
         with self._lock:
             chunk_map = {chunk.id: chunk for chunk in self.store.all_chunks()}
@@ -706,7 +706,7 @@ class RAGPipeline:
                     document_name=hit.document_name,
                     page=hit.page,
                     section=hit.section,
-                    snippet=f"{hit.text[:160]}...",
+                    snippet=self._citation_snippet(hit.text),
                     score=hit.score,
                 )
                 for hit in trace.reranked_hits
@@ -794,6 +794,56 @@ class RAGPipeline:
         return round(sum(materialized) / len(materialized), 3)
 
     @staticmethod
+    def _select_benchmark_samples(
+        benchmark: list[dict[str, object]],
+        sample_limit: int,
+    ) -> list[dict[str, object]]:
+        if sample_limit >= len(benchmark):
+            return benchmark
+        if sample_limit <= 0:
+            return []
+
+        selected: list[dict[str, object]] = []
+        selected_questions: set[str] = set()
+        priority_categories = [
+            "factual",
+            "architecture",
+            "ingestion",
+            "retrieval",
+            "generation",
+            "frontend",
+            "refusal",
+            "security",
+        ]
+
+        for category in priority_categories:
+            for sample in benchmark:
+                question = str(sample["question"])
+                if sample["category"] == category and question not in selected_questions:
+                    selected.append(sample)
+                    selected_questions.add(question)
+                    break
+            if len(selected) >= sample_limit:
+                return selected[:sample_limit]
+
+        for sample in benchmark:
+            question = str(sample["question"])
+            if question in selected_questions:
+                continue
+            selected.append(sample)
+            selected_questions.add(question)
+            if len(selected) >= sample_limit:
+                break
+        return selected
+
+    @staticmethod
+    def _citation_snippet(text: str, limit: int = 360) -> str:
+        normalized = " ".join(text.split())
+        if len(normalized) <= limit:
+            return normalized
+        return f"{normalized[:limit].rstrip()}..."
+
+    @staticmethod
     def _reciprocal_rank(result: QueryResult, expected_terms: list[str]) -> float:
         if not expected_terms:
             return 0.0
@@ -831,8 +881,8 @@ class RAGPipeline:
             sample("factual", "What is the maximum upload size?", ["10", "mb"]),
             sample("factual", "What happens to files larger than the upload limit?", ["rejected", "split"]),
             sample("factual", "Does the system support text-based PDFs?", ["text", "pdf"]),
-            sample("factual", "Are scanned PDFs supported in version 1?", ["scanned", "ocr", "not"]),
-            sample("factual", "Why is OCR listed as future work?", ["image", "ocr"]),
+            sample("factual", "Are scanned PDFs supported in version 1?", ["scanned", "ocr", "fallback"]),
+            sample("factual", "How does OCR help with scanned PDFs?", ["scanned", "ocr"]),
             sample("factual", "Who built the application?", ["lakshit", "tandon"]),
             sample("factual", "What is the registration number mentioned in the document?", ["220905506"]),
             sample("factual", "Who is the internal guide?", ["manjula", "shenoy"]),
