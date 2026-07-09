@@ -29,7 +29,7 @@ services:
       - key: OLLAMA_BASE_URL
         value: https://ollama.com
       - key: OLLAMA_MODEL
-        value: qwen2.5:0.5b
+        value: gemma3:4b
       - key: OLLAMA_TIMEOUT_SECONDS
         value: "120"
       - key: OLLAMA_API_KEY
