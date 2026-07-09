@@ -25,7 +25,7 @@ const PROVIDER_OPTIONS: Array<{
   {
     value: "gemini",
     label: "Gemini hosted",
-    description: "Best answer quality for the deployed demo.",
+    description: "Best answer quality for the hosted project.",
   },
   {
     value: "ollama",
@@ -112,8 +112,8 @@ export function QueryPage({ health, result, onSubmitQuestion }: QueryPageProps) 
             </label>
             <p className="model-note">
               {isOllamaAvailable
-                ? "Gemini is the hosted quality mode. Ollama/Qwen is available for privacy-cost comparison."
-                : "Ollama/Qwen is disabled until OLLAMA_API_KEY is added in Render. Gemini is ready for hosted answers."}
+                ? "Gemini is the hosted quality mode. Ollama/Qwen is available for local or cloud privacy-cost comparison."
+                : "Ollama/Qwen is not configured on this deployment. Run the app locally with Ollama, or add an Ollama Cloud key in Render."}
             </p>
           </div>
 

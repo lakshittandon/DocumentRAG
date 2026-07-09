@@ -35,6 +35,7 @@ export function DashboardPage({
       ? "enabled for scanned PDFs"
       : "not available in this environment"
     : "checking backend support";
+  const visibleIndexedDocumentCount = documents.filter((document) => document.status === "indexed").length;
 
   const handleFileChange = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -66,7 +67,7 @@ export function DashboardPage({
         </div>
         <div className="stats-strip">
           <article className="stat-pill">
-            <strong>{health?.documents_indexed ?? documents.length}</strong>
+            <strong>{visibleIndexedDocumentCount}</strong>
             <span>Documents Indexed</span>
           </article>
           <article className="stat-pill">
